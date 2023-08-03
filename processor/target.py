@@ -184,24 +184,28 @@ class target:
                         "varType" : "float",
                         "name" : "deviceRunHours",
                         "displayString" : "Machine Hours",
+                        "decPrecision": 2,
                     },
                     "deviceOdometer" : {
                         "type" : "uiVariable",
                         "varType" : "float",
                         "name" : "deviceOdometer",
                         "displayString" : "Machine Odometer (km)",
+                        "decPrecision": 1,
                     },
                     "sysVoltage" : {
                         "type" : "uiVariable",
                         "varType" : "float",
                         "name" : "sysVoltage",
                         "displayString" : "System Voltage",
+                        "decPrecision": 1,
                     },
                     "battVoltage" : {
                         "type" : "uiVariable",
                         "varType" : "float",
                         "name" : "battVoltage",
                         "displayString" : "Tracker Battery Voltage",
+                        "decPrecision": 1,
                     },
                     "dataSignalStrength" : {
                         "type" : "uiVariable",
@@ -359,8 +363,8 @@ class target:
                 data_signal_strength = round( f['AnalogueData']['4'] * (100/31) ) ## Signal quality between 0-31
 
             if f['FType'] == 27:
-                device_odometer = f['1'] * 100
-                device_run_hours = f['2'] / (60 * 60)
+                device_odometer = f['Odo'] * 100
+                device_run_hours = f['RH'] / (60 * 60)
 
 
         if position is not None:
