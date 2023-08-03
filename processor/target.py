@@ -1,8 +1,5 @@
 #!/usr/bin/python3
-from operator import truediv
 import os, sys, time, json
-
-from regex import P
 
 
 ## This is the definition for a tiny lambda function
@@ -146,6 +143,7 @@ class target:
                     'alt': fields['Alt'],
                 }
         except KeyError:
+            self.add_to_log( "No position available in uplink" )
             pass
 
         if position is not None:
