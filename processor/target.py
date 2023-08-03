@@ -197,15 +197,75 @@ class target:
                         "type" : "uiVariable",
                         "varType" : "float",
                         "name" : "sysVoltage",
-                        "displayString" : "System Voltage",
+                        "displayString" : "System Voltage (V)",
                         "decPrecision": 1,
+                        "ranges": [
+                            {
+                                "label" : "Low",
+                                "min" : 9,
+                                "max" : 11.5,
+                                "colour" : "yellow",
+                                "showOnGraph" : True
+                            },
+                            {
+                                # "label" : "Ok",
+                                "min" : 11.5,
+                                "max" : 13.0,
+                                "colour" : "blue",
+                                "showOnGraph" : True
+                            },
+                            {
+                                "label" : "Charging",
+                                "min" : 13.0,
+                                "max" : 14.2,
+                                "colour" : "green",
+                                "showOnGraph" : True
+                            },
+                            {
+                                "label" : "Over Voltage",
+                                "min" : 14.2,
+                                "max" : 15.0,
+                                "colour" : "yellow",
+                                "showOnGraph" : True
+                            }
+                        ]
                     },
                     "battVoltage" : {
                         "type" : "uiVariable",
                         "varType" : "float",
                         "name" : "battVoltage",
-                        "displayString" : "Tracker Battery Voltage",
+                        "displayString" : "Tracker Battery (V)",
                         "decPrecision": 1,
+                        "ranges": [
+                            {
+                                "label" : "Low",
+                                "min" : 3.0,
+                                "max" : 3.5,
+                                "colour" : "yellow",
+                                "showOnGraph" : True
+                            },
+                            {
+                                # "label" : "Ok",
+                                "min" : 3.5,
+                                "max" : 3.8,
+                                "colour" : "blue",
+                                "showOnGraph" : True
+                            },
+                            {
+                                "label" : "Good",
+                                "min" : 3.8,
+                                "max" : 4.2,
+                                "colour" : "green",
+                                "showOnGraph" : True
+                            },
+                            {
+                                "label" : "Over Voltage",
+                                "min" : 4.2,
+                                "max" : 4.5,
+                                "colour" : "yellow",
+                                "showOnGraph" : True
+                            }
+                        ]
                     },
                     "dataSignalStrength" : {
                         "type" : "uiVariable",
@@ -277,7 +337,7 @@ class target:
                         "type" : "uiVariable",
                         "varType" : "datetime",
                         "name" : "deviceTimeUtc",
-                        "displayString" : "Device Time",
+                        "displayString" : "Device Time (UTC)",
                     },
                     "node_connection_info": {
                         "type": "uiConnectionInfo",
@@ -354,7 +414,7 @@ class target:
                             'long': f['Long'],
                             'alt': f['Alt'],
                         }
-                        speed_kmh = f['Spd'] * 3.6
+                        speed_kmh = f['Spd'] * ( 3.6 / 100)
                         gps_accuracy_m = f['PosAcc']
 
                 if f['FType'] == 2:
@@ -367,7 +427,7 @@ class target:
                     data_signal_strength = round( f['AnalogueData']['4'] * (100/31) ) ## Signal quality between 0-31
 
                 if f['FType'] == 27:
-                    device_odometer = f['Odo'] * 100
+                    device_odometer = f['Odo'] / 100
                     device_run_hours = f['RH'] / (60 * 60)
 
 
@@ -386,7 +446,7 @@ class target:
                     status_icon = "idle"
                     display_string = "Idle"
                 else:
-                    status_icon = "good"
+                    status_icon = None
                     display_string = "Running"
 
                 ui_state_channel.publish(
