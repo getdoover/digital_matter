@@ -353,10 +353,10 @@ class target:
                 ignition_on = (f['Din'] & 0b001 != 0)
 
             if f['FType'] == 6:
-                batt_voltage = f['1'] / 1000
-                sys_voltage = f['2'] / 100
-                device_temp = f['3'] / 100
-                data_signal_strength = round( f['4'] * (100/31) ) ## Signal quality between 0-31
+                batt_voltage = f['AnalogueData']['1'] / 1000
+                sys_voltage = f['AnalogueData']['2'] / 100
+                device_temp = f['AnalogueData']['3'] / 100
+                data_signal_strength = round( f['AnalogueData']['4'] * (100/31) ) ## Signal quality between 0-31
 
             if f['FType'] == 27:
                 device_odometer = f['1'] * 100
