@@ -14,7 +14,16 @@ from regex import P
 
 ## You can import the pydoover module to interact with Doover based on decisions made in this function
 ## Just add the current directory to the path first
-sys.path.append(os.path.dirname(__file__))
+
+## attempt to delete any loaded pydoover modules that persist across lambdas
+if 'pydoover' in sys.modules:
+    del sys.modules['pydoover']
+try: del pydoover
+except: pass
+try: del pd
+except: pass
+
+# sys.path.append(os.path.dirname(__file__))
 import pydoover as pd
 
 
@@ -44,6 +53,24 @@ class target:
         self.add_to_log( str( start_time ) )
 
         try:
+
+            ## Get the state channel
+            ui_state_channel = self.cli.get_channel(
+                channel_name="ui_state",
+                agent_id=self.kwargs['agent_id']
+            )
+
+            ## Get the cmds channel
+            ui_cmds_channel = self.cli.get_channel(
+                channel_name="ui_cmds",
+                agent_id=self.kwargs['agent_id']
+            )
+
+            ## Get the location channel
+            location_channel = self.cli.get_channel(
+                channel_name="location",
+                agent_id=self.kwargs['agent_id']
+            )
             
             ## Do any processing you would like to do here
             message_type = None
@@ -51,13 +78,13 @@ class target:
                 message_type = self.kwargs['package_config']['message_type']
 
             if message_type == "DEPLOY":
-                self.deploy()
+                self.deploy(ui_state_channel, ui_cmds_channel, location_channel)
 
             if message_type == "DOWNLINK":
-                self.downlink()
+                self.downlink(ui_state_channel, ui_cmds_channel, location_channel)
 
             if message_type == "UPLINK":
-                self.uplink()
+                self.uplink(ui_state_channel, ui_cmds_channel, location_channel)
 
         except Exception as e:
             self.add_to_log("ERROR attempting to process message - " + str(e))
@@ -66,13 +93,8 @@ class target:
 
 
 
-    def deploy(self):
+    def deploy(self, ui_state_channel, ui_cmds_channel, location_channel):
         ## Run any deployment code here
-        
-        ## Get the deployment channel
-        ui_state_channel = self.cli.get_channel(
-            channel_name="ui_state",
-            agent_id=self.kwargs['agent_id'] )
 
         ui_obj = {
             "state" : {
@@ -95,13 +117,42 @@ class target:
         )
 
 
-    def downlink(self):
+    def downlink(self, ui_state_channel, ui_cmds_channel, location_channel):
         ## Run any downlink processing code here
         pass
 
-    def uplink(self):
+
+    def uplink(self, ui_state_channel, ui_cmds_channel, location_channel):
         ## Run any uplink processing code here
-        pass
+
+        if 'msg_obj' in self.kwargs and self.kwargs['msg_obj'] is not None:
+            msg_id = self.kwargs['msg_obj']['message']
+            channel_id = self.kwargs['msg_obj']['channel']
+            payload = self.kwargs['msg_obj']['payload']
+
+        if not msg_id:
+            self.add_to_log( "No trigger message passed - skipping processing" )
+            return
+        
+
+        ## Extract and publish the position
+        position = None
+        try:
+            fields = payload['Records'][0]['Fields'][0]
+            if fields['Lat'] != 0 and fields['Long'] != 0:
+                position = {
+                    'lat': fields['Lat'],
+                    'long': fields['Long'],
+                    'alt': fields['Alt'],
+                }
+        except KeyError:
+            pass
+
+        if position is not None:
+            location_channel.publish(
+                msg_str=json.dumps(position),
+                save_log=True
+            )
 
 
     def create_doover_client(self):
