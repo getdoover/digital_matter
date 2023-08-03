@@ -362,10 +362,22 @@ class target:
             )
 
         if ignition_on is not None:
+
+            if not ignition_on:
+                status_icon = "off"
+                display_string = "Off"
+            elif speed_kmh is None or speed_kmh <= 1:
+                status_icon = "idle"
+                display_string = "Idle"
+            else:
+                status_icon = "good"
+                display_string = "Running"
+
             ui_state_channel.publish(
                 msg_str=json.dumps({
                     "state" : {
-                        "displayString" : "",
+                        "displayString" : display_string,
+                        "statusIcon" : status_icon,
                         "children" : {
                             "location" : {
                                 "currentValue" : position,
