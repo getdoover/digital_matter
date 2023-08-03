@@ -98,12 +98,184 @@ class target:
                 "type" : "uiContainer",
                 "displayString" : "",
                 "children" : {
-                    "isWorking" : {
+                    "location" : {
+                        "type" : "uiVariable",
+                        "varType" : "location",
+                        "name" : "location",
+                        "displayString" : "Location",
+                    },
+                    "speed" : {
                         "type" : "uiVariable",
                         "varType" : "float",
-                        "name" : "isWorking",
-                        "displayString" : "Is it Working?",
-                        "currentValue" : True
+                        "name" : "speed",
+                        "displayString" : "Speed (km/h)",
+                        "decPrecision": 1,
+                        "form": "radialGauge",
+                        "ranges": [
+                            {
+                                "label" : "Low",
+                                "min" : 0,
+                                "max" : 20,
+                                "colour" : "blue",
+                                "showOnGraph" : True
+                            },
+                            {
+                                # "label" : "Ok",
+                                "min" : 20,
+                                "max" : 80,
+                                "colour" : "green",
+                                "showOnGraph" : True
+                            },
+                            {
+                                "label" : "Fast",
+                                "min" : 80,
+                                "max" : 120,
+                                "colour" : "yellow",
+                                "showOnGraph" : True
+                            }
+                        ]
+                    },
+                    "gpsAccuracy" : {
+                        "type" : "uiVariable",
+                        "varType" : "float",
+                        "name" : "gpsAccuracy",
+                        "displayString" : "GPS accuracy (m)",
+                        "decPrecision": 0,
+                        "ranges": [
+                            {
+                                "label" : "Good",
+                                "min" : 0,
+                                "max" : 15,
+                                "colour" : "green",
+                                "showOnGraph" : True
+                            },
+                            {
+                                "label" : "Ok",
+                                "min" : 15,
+                                "max" : 30,
+                                "colour" : "blue",
+                                "showOnGraph" : True
+                            },
+                            {
+                                "label" : "Bad",
+                                "min" : 30,
+                                "max" : 80,
+                                "colour" : "yellow",
+                                "showOnGraph" : True
+                            },
+                            {
+                                "label" : "Lost",
+                                "min" : 80,
+                                "max" : 100,
+                                "colour" : "red",
+                                "showOnGraph" : True
+                            }
+                        ]
+                    },
+                    "ignitionOn" : {
+                        "type" : "uiVariable",
+                        "varType" : "bool",
+                        "name" : "ignitionOn",
+                        "displayString" : "Ignition On",
+                    },
+                    "deviceRunHours" : {
+                        "type" : "uiVariable",
+                        "varType" : "float",
+                        "name" : "deviceRunHours",
+                        "displayString" : "Machine Hours",
+                    },
+                    "deviceOdometer" : {
+                        "type" : "uiVariable",
+                        "varType" : "float",
+                        "name" : "deviceOdometer",
+                        "displayString" : "Machine Odometer (km)",
+                    },
+                    "sysVoltage" : {
+                        "type" : "uiVariable",
+                        "varType" : "float",
+                        "name" : "sysVoltage",
+                        "displayString" : "System Voltage",
+                    },
+                    "battVoltage" : {
+                        "type" : "uiVariable",
+                        "varType" : "float",
+                        "name" : "battVoltage",
+                        "displayString" : "Tracker Battery Voltage",
+                    },
+                    "dataSignalStrength" : {
+                        "type" : "uiVariable",
+                        "varType" : "float",
+                        "name" : "dataSignalStrength",
+                        "displayString" : "Cellular Signal (%)",
+                        "decPrecision": 0,
+                        "ranges": [
+                            {
+                                "label" : "Low",
+                                "min" : 0,
+                                "max" : 30,
+                                "colour" : "yellow",
+                                "showOnGraph" : True
+                            },
+                            {
+                                "label" : "Ok",
+                                "min" : 30,
+                                "max" : 60,
+                                "colour" : "blue",
+                                "showOnGraph" : True
+                            },
+                            {
+                                "label" : "Strong",
+                                "min" : 60,
+                                "max" : 100,
+                                "colour" : "green",
+                                "showOnGraph" : True
+                            }
+                        ]
+                    },
+                    "deviceTemp" : {
+                        "type" : "uiVariable",
+                        "varType" : "float",
+                        "name" : "deviceTemp",
+                        "displayString" : "Device Temperature (C)",
+                        "decPrecision": 0,
+                        "ranges": [
+                            {
+                                "label" : "Low",
+                                "min" : 0,
+                                "max" : 20,
+                                "colour" : "blue",
+                                "showOnGraph" : True
+                            },
+                            {
+                                # "label" : "Ok",
+                                "min" : 20,
+                                "max" : 35,
+                                "colour" : "green",
+                                "showOnGraph" : True
+                            },
+                            {
+                                "label" : "Warm",
+                                "min" : 35,
+                                "max" : 50,
+                                "colour" : "yellow",
+                                "showOnGraph" : True
+                            }
+                        ]
+                    },
+                    "deviceTimeUtc" : {
+                        "type" : "uiVariable",
+                        "varType" : "datetime",
+                        "name" : "deviceTimeUtc",
+                        "displayString" : "Device Time",
+                    },
+                    "node_connection_info": {
+                        "type": "uiConnectionInfo",
+                        "name": "node_connection_info",
+                        "connectionType": "periodic",
+                        # "connectionPeriod": 1800,
+                        # "nextConnection": 1800
+                        "connectionPeriod": 600,
+                        "nextConnection": 600,
                     }
                 }
             }
@@ -132,23 +304,105 @@ class target:
             return
         
 
-        ## Extract and publish the position
+        if not 'Records' in payload or not 'Fields' in payload['Records'][0]:
+            self.add_to_log( "No records in payload - skipping processing" )
+            return
+        
+        record = payload['Records'][0]
+        fields = record['Fields']
+
+        device_time_utc = record['DateUTC']
+
         position = None
-        try:
-            fields = payload['Records'][0]['Fields'][0]
-            if fields['Lat'] != 0 and fields['Long'] != 0:
-                position = {
-                    'lat': fields['Lat'],
-                    'long': fields['Long'],
-                    'alt': fields['Alt'],
-                }
-        except KeyError:
-            self.add_to_log( "No position available in uplink" )
-            pass
+        gps_accuracy_m = None
+        speed_kmh = None
+        ignition_on = None
+        device_run_hours = None
+        device_odometer = None
+        sys_voltage = None
+        batt_voltage = None
+        device_temp = None
+        data_signal_strength = None
+
+
+        for f in fields:
+
+            if not 'FType' in f:
+                continue
+
+            if f['FType'] == 0:
+                gps_accuracy_m = 99
+                if fields['Lat'] != 0 and fields['Long'] != 0:
+                    position = {
+                        'lat': fields['Lat'],
+                        'long': fields['Long'],
+                        'alt': fields['Alt'],
+                    }
+                    speed_kmh = fields['Spd'] * 3.6
+                    gps_accuracy_m = fields['PosAcc']
+
+            if f['FType'] == 2:
+                ignition_on = (f['Din'] & 0b001 != 0)
+
+            if f['FType'] == 6:
+                batt_voltage = f['1'] / 1000
+                sys_voltage = f['2'] / 100
+                device_temp = f['3'] / 100
+                data_signal_strength = round( f['4'] * (100/31) ) ## Signal quality between 0-31
+
+            if f['FType'] == 27:
+                device_odometer = f['1'] * 100
+                device_run_hours = f['2'] / (60 * 60)
+
 
         if position is not None:
             location_channel.publish(
                 msg_str=json.dumps(position),
+                save_log=True
+            )
+
+        if ignition_on is not None:
+            ui_state_channel.publish(
+                msg_str=json.dumps({
+                    "state" : {
+                        "displayString" : "",
+                        "children" : {
+                            "location" : {
+                                "currentValue" : position,
+                            },
+                            "speed" : {
+                                "currentValue" : speed_kmh,
+                            },
+                            "gpsAccuracy" : {
+                                "currentValue" : gps_accuracy_m,
+                            },
+                            "ignitionOn" : {
+                                "currentValue" : ignition_on,
+                            },
+                            "deviceRunHours" : {
+                                "currentValue" : device_run_hours,
+                            },
+                            "deviceOdometer" : {
+                                "currentValue" : device_odometer,
+                            },
+                            "sysVoltage" : {
+                                "currentValue" : sys_voltage,
+                            },
+                            "battVoltage" : {
+                                "currentValue" : batt_voltage,
+                            },
+                            "dataSignalStrength" : {
+                                "currentValue" : data_signal_strength,
+                            },
+                            "deviceTemp" : {
+                                "currentValue" : device_temp,
+                            },
+                            "deviceTimeUtc" : {
+                                "currentValue" : device_time_utc,
+                            },
+                        }
+                    }
+                }),
                 save_log=True
             )
 

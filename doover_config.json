@@ -69,6 +69,10 @@
             }
         },
         {
+            "channel_name" : "location",
+            "channel_message" : {}
+        },
+        {
             "channel_name" : "deployments",
             "channel_message" : {
                 "new_deployment" : true
