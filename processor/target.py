@@ -315,123 +315,127 @@ class target:
             return
         
 
-        if not 'Records' in payload or not 'Fields' in payload['Records'][0]:
+        if not 'Records' in payload:
             self.add_to_log( "No records in payload - skipping processing" )
             return
         
-        record = payload['Records'][0]
-        fields = record['Fields']
+        for record in payload['Records']:
+            if not 'Fields' in record:
+                self.add_to_log( "No fields in record - skipping processing" )
+                return
 
-        device_uplink_reason = record['Reason']
-        device_time_utc = record['DateUTC']
+            fields = record['Fields']
 
-        position = None
-        gps_accuracy_m = None
-        speed_kmh = None
-        ignition_on = None
-        device_run_hours = None
-        device_odometer = None
-        sys_voltage = None
-        batt_voltage = None
-        device_temp = None
-        data_signal_strength = None
+            device_uplink_reason = record['Reason']
+            device_time_utc = record['DateUTC']
 
-
-        for f in fields:
-
-            if not 'FType' in f:
-                continue
-
-            if f['FType'] == 0:
-                gps_accuracy_m = 99
-                if f['Lat'] != 0 and f['Long'] != 0:
-                    position = {
-                        'lat': f['Lat'],
-                        'long': f['Long'],
-                        'alt': f['Alt'],
-                    }
-                    speed_kmh = f['Spd'] * 3.6
-                    gps_accuracy_m = f['PosAcc']
-
-            if f['FType'] == 2:
-                ignition_on = (f['DIn'] & 0b001 != 0)
-
-            if f['FType'] == 6:
-                batt_voltage = f['AnalogueData']['1'] / 1000
-                sys_voltage = f['AnalogueData']['2'] / 100
-                device_temp = f['AnalogueData']['3'] / 100
-                data_signal_strength = round( f['AnalogueData']['4'] * (100/31) ) ## Signal quality between 0-31
-
-            if f['FType'] == 27:
-                device_odometer = f['Odo'] * 100
-                device_run_hours = f['RH'] / (60 * 60)
+            position = None
+            gps_accuracy_m = None
+            speed_kmh = None
+            ignition_on = None
+            device_run_hours = None
+            device_odometer = None
+            sys_voltage = None
+            batt_voltage = None
+            device_temp = None
+            data_signal_strength = None
 
 
-        if position is not None:
-            location_channel.publish(
-                msg_str=json.dumps(position),
-                save_log=True
-            )
+            for f in fields:
 
-        if ignition_on is not None:
+                if not 'FType' in f:
+                    continue
 
-            if not ignition_on:
-                status_icon = "off"
-                display_string = "Off"
-            elif speed_kmh is None or speed_kmh <= 1:
-                status_icon = "idle"
-                display_string = "Idle"
-            else:
-                status_icon = "good"
-                display_string = "Running"
-
-            ui_state_channel.publish(
-                msg_str=json.dumps({
-                    "state" : {
-                        "displayString" : display_string,
-                        "statusIcon" : status_icon,
-                        "children" : {
-                            "location" : {
-                                "currentValue" : position,
-                            },
-                            "speed" : {
-                                "currentValue" : speed_kmh,
-                            },
-                            "gpsAccuracy" : {
-                                "currentValue" : gps_accuracy_m,
-                            },
-                            "ignitionOn" : {
-                                "currentValue" : ignition_on,
-                            },
-                            "deviceRunHours" : {
-                                "currentValue" : device_run_hours,
-                            },
-                            "deviceOdometer" : {
-                                "currentValue" : device_odometer,
-                            },
-                            "sysVoltage" : {
-                                "currentValue" : sys_voltage,
-                            },
-                            "battVoltage" : {
-                                "currentValue" : batt_voltage,
-                            },
-                            "dataSignalStrength" : {
-                                "currentValue" : data_signal_strength,
-                            },
-                            "deviceTemp" : {
-                                "currentValue" : device_temp,
-                            },
-                            "lastUplinkReason" : {
-                                "currentValue" : self.uplink_reason_translate(device_uplink_reason),
-                            },
-                            "deviceTimeUtc" : {
-                                "currentValue" : device_time_utc,
-                            },
+                if f['FType'] == 0:
+                    gps_accuracy_m = 99
+                    if f['Lat'] != 0 and f['Long'] != 0:
+                        position = {
+                            'lat': f['Lat'],
+                            'long': f['Long'],
+                            'alt': f['Alt'],
                         }
-                    }
-                }),
-                save_log=True
-            )
+                        speed_kmh = f['Spd'] * 3.6
+                        gps_accuracy_m = f['PosAcc']
+
+                if f['FType'] == 2:
+                    ignition_on = (f['DIn'] & 0b001 != 0)
+
+                if f['FType'] == 6:
+                    batt_voltage = f['AnalogueData']['1'] / 1000
+                    sys_voltage = f['AnalogueData']['2'] / 100
+                    device_temp = f['AnalogueData']['3'] / 100
+                    data_signal_strength = round( f['AnalogueData']['4'] * (100/31) ) ## Signal quality between 0-31
+
+                if f['FType'] == 27:
+                    device_odometer = f['Odo'] * 100
+                    device_run_hours = f['RH'] / (60 * 60)
+
+
+            if position is not None:
+                location_channel.publish(
+                    msg_str=json.dumps(position),
+                    save_log=True
+                )
+
+            if ignition_on is not None:
+
+                if not ignition_on:
+                    status_icon = "off"
+                    display_string = "Off"
+                elif speed_kmh is None or speed_kmh <= 1:
+                    status_icon = "idle"
+                    display_string = "Idle"
+                else:
+                    status_icon = "good"
+                    display_string = "Running"
+
+                ui_state_channel.publish(
+                    msg_str=json.dumps({
+                        "state" : {
+                            "displayString" : display_string,
+                            "statusIcon" : status_icon,
+                            "children" : {
+                                "location" : {
+                                    "currentValue" : position,
+                                },
+                                "speed" : {
+                                    "currentValue" : speed_kmh,
+                                },
+                                "gpsAccuracy" : {
+                                    "currentValue" : gps_accuracy_m,
+                                },
+                                "ignitionOn" : {
+                                    "currentValue" : ignition_on,
+                                },
+                                "deviceRunHours" : {
+                                    "currentValue" : device_run_hours,
+                                },
+                                "deviceOdometer" : {
+                                    "currentValue" : device_odometer,
+                                },
+                                "sysVoltage" : {
+                                    "currentValue" : sys_voltage,
+                                },
+                                "battVoltage" : {
+                                    "currentValue" : batt_voltage,
+                                },
+                                "dataSignalStrength" : {
+                                    "currentValue" : data_signal_strength,
+                                },
+                                "deviceTemp" : {
+                                    "currentValue" : device_temp,
+                                },
+                                "lastUplinkReason" : {
+                                    "currentValue" : self.uplink_reason_translate(device_uplink_reason),
+                                },
+                                "deviceTimeUtc" : {
+                                    "currentValue" : device_time_utc,
+                                },
+                            }
+                        }
+                    }),
+                    save_log=True
+                )
 
     def uplink_reason_translate(self, reason_code):
         reasons = {
