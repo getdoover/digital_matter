@@ -183,7 +183,7 @@ class target:
                         "type" : "uiVariable",
                         "varType" : "float",
                         "name" : "deviceRunHours",
-                        "displayString" : "Machine Hours",
+                        "displayString" : "Machine Hours (hrs)",
                         "decPrecision": 2,
                     },
                     "deviceOdometer" : {
