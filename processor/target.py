@@ -262,6 +262,12 @@ class target:
                             }
                         ]
                     },
+                    "lastUplinkReason" : {
+                        "type" : "uiVariable",
+                        "varType" : "text",
+                        "name" : "lastUplinkReason",
+                        "displayString" : "Reason for uplink",
+                    },
                     "deviceTimeUtc" : {
                         "type" : "uiVariable",
                         "varType" : "datetime",
@@ -311,6 +317,7 @@ class target:
         record = payload['Records'][0]
         fields = record['Fields']
 
+        device_uplink_reason = record['Reason']
         device_time_utc = record['DateUTC']
 
         position = None
@@ -332,14 +339,14 @@ class target:
 
             if f['FType'] == 0:
                 gps_accuracy_m = 99
-                if fields['Lat'] != 0 and fields['Long'] != 0:
+                if f['Lat'] != 0 and f['Long'] != 0:
                     position = {
-                        'lat': fields['Lat'],
-                        'long': fields['Long'],
-                        'alt': fields['Alt'],
+                        'lat': f['Lat'],
+                        'long': f['Long'],
+                        'alt': f['Alt'],
                     }
-                    speed_kmh = fields['Spd'] * 3.6
-                    gps_accuracy_m = fields['PosAcc']
+                    speed_kmh = f['Spd'] * 3.6
+                    gps_accuracy_m = f['PosAcc']
 
             if f['FType'] == 2:
                 ignition_on = (f['Din'] & 0b001 != 0)
@@ -409,6 +416,9 @@ class target:
                             "deviceTemp" : {
                                 "currentValue" : device_temp,
                             },
+                            "lastUplinkReason" : {
+                                "currentValue" : self.uplink_reason_translate(device_uplink_reason),
+                            },
                             "deviceTimeUtc" : {
                                 "currentValue" : device_time_utc,
                             },
@@ -417,6 +427,66 @@ class target:
                 }),
                 save_log=True
             )
+
+    def uplink_reason_translate(self, reason_code):
+        reasons = {
+            0:	'Reserved',
+            1:	'Start of trip',
+            2:	'End of trip',
+            3:	'Elapsed time',
+            4:	'Speed change',
+            5:	'Heading change',
+            6:	'Distance travelled',
+            7:	'Maximum Speed',
+            8:	'Stationary',
+            9:	'Ignition Changed',
+            10:	'Output Changed',
+            11:	'Heartbeat',
+            12:	'Harsh Brake ',
+            13:	'Harsh Acceleration',
+            14:	'Harsh Cornering',
+            15:	'External Power Change  ',
+            16:	'System Power Monitoring',
+            17:	'Driver ID Tag Read',
+            18:	'Over speed',
+            19:	'Fuel sensor record',
+            20:	'Towing Alert',
+            21:	'Debug',
+            22:	'SDI-12 sensor data',
+            23:	'Accident',
+            24:	'Accident Data',
+            25:	'Sensor value elapsed time',
+            26:	'Sensor value change',
+            27:	'Sensor alarm',
+            28:	'Rain Gauge Tipped',
+            29:	'Tamper Alert',
+            30:	'BLOB notification',
+            31:	'Time and Attendance',
+            32:	'Trip Restart',
+            33:	'Tag Gained',
+            34:	'Tag Update',
+            35:	'Tag Lost',
+            36:	'Recovery Mode On',
+            37:	'Recovery Mode Off',
+            38:	'Immobiliser On',
+            39:	'Immobiliser Off',
+            40:	'Garmin FMI Stop Response ',
+            41:	'Lone Worker Alarm',
+            42:	'Device Counters',
+            43:	'Connected Device Data',
+            44:	'Entered Geo-Fence ',
+            45:	'Exited Geo-Fence ',
+            46:	'High-G Event',
+            47:	'Third party data record',
+            48:	'Duress',
+            49:	'Cell Tower Connection',
+            50:	'Bluetooth Tag Data',
+        }
+
+        if reason_code in reasons:
+            return reasons[reason_code]
+        else:
+            return "Unknown reason"
 
 
     def create_doover_client(self):
