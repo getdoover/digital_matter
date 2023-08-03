@@ -354,7 +354,7 @@ class target:
                     gps_accuracy_m = f['PosAcc']
 
             if f['FType'] == 2:
-                ignition_on = (f['Din'] & 0b001 != 0)
+                ignition_on = (f['DIn'] & 0b001 != 0)
 
             if f['FType'] == 6:
                 batt_voltage = f['AnalogueData']['1'] / 1000
