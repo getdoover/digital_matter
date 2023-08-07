@@ -102,6 +102,7 @@ class target:
                     "location" : {
                         "type" : "uiVariable",
                         "varType" : "location",
+                        "hide" : True,
                         "name" : "location",
                         "displayString" : "Location",
                     },
