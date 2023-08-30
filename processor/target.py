@@ -37,6 +37,9 @@ class target:
         #     'msg_obj' : A dictionary object of the msg that has invoked this task,
         #     'task_id' : The identifier string of the task channel used to run this processor,
         #     'log_channel' : The identifier string of the channel to publish any logs to
+        #     'agent_settings' : {
+        #       'deployment_config' : {} # a dictionary of the deployment config for this agent
+        #     }
 
 
     ## This function is invoked after the singleton instance is created
@@ -50,6 +53,12 @@ class target:
         self.add_to_log( str( start_time ) )
 
         try:
+
+            ## Get the oem_uplink channel
+            oem_uplink_channel = self.cli.get_channel(
+                channel_name="dm_oem_uplink_recv",
+                agent_id=self.kwargs['agent_id']
+            )
 
             ## Get the state channel
             ui_state_channel = self.cli.get_channel(
@@ -75,13 +84,13 @@ class target:
                 message_type = self.kwargs['package_config']['message_type']
 
             if message_type == "DEPLOY":
-                self.deploy(ui_state_channel, ui_cmds_channel, location_channel)
+                self.deploy(oem_uplink_channel, ui_state_channel, ui_cmds_channel, location_channel)
 
             if message_type == "DOWNLINK":
-                self.downlink(ui_state_channel, ui_cmds_channel, location_channel)
+                self.downlink(oem_uplink_channel, ui_state_channel, ui_cmds_channel, location_channel)
 
             if message_type == "UPLINK":
-                self.uplink(ui_state_channel, ui_cmds_channel, location_channel)
+                self.uplink(oem_uplink_channel, ui_state_channel, ui_cmds_channel, location_channel)
 
         except Exception as e:
             self.add_to_log("ERROR attempting to process message - " + str(e))
@@ -91,7 +100,7 @@ class target:
 
 
 
-    def deploy(self, ui_state_channel, ui_cmds_channel, location_channel):
+    def deploy(self, oem_uplink_channel, ui_state_channel, ui_cmds_channel, location_channel):
         ## Run any deployment code here
 
         ui_obj = {
@@ -357,13 +366,20 @@ class target:
             msg_str=json.dumps(ui_obj)
         )
 
+        ## Publish a dummy message to oem_uplink to trigger a new process of data
+        oem_uplink_channel.publish(
+            msg_str=json.dumps({}),
+            save_log=False,
+            log_aggregate=False
+        )
 
-    def downlink(self, ui_state_channel, ui_cmds_channel, location_channel):
+
+    def downlink(self, oem_uplink_channel, ui_state_channel, ui_cmds_channel, location_channel):
         ## Run any downlink processing code here
         pass
 
 
-    def uplink(self, ui_state_channel, ui_cmds_channel, location_channel):
+    def uplink(self, oem_uplink_channel, ui_state_channel, ui_cmds_channel, location_channel):
         ## Run any uplink processing code here
 
         if 'msg_obj' in self.kwargs and self.kwargs['msg_obj'] is not None:
@@ -431,6 +447,16 @@ class target:
                     device_odometer = f['Odo'] / 100
                     device_run_hours = f['RH'] / (60 * 60)
 
+                    odometer_offset = self.get_agent_settings('ODO_OFFSET')
+                    machine_hours_offset = self.get_agent_settings('MACHINE_HOURS_OFFSET')
+
+                    if odometer_offset is not None:
+                        self.add_to_log("Applying odometer offset of " + str(odometer_offset))
+                        device_odometer = device_odometer + odometer_offset
+
+                    if machine_hours_offset is not None:
+                        self.add_to_log("Applying machine hours offset of " + str(machine_hours_offset))
+                        device_run_hours = device_run_hours + machine_hours_offset
 
             if position is not None:
                 location_channel.publish(
@@ -565,6 +591,17 @@ class target:
             access_token=self.kwargs['access_token'],
             endpoint=self.kwargs['api_endpoint'],
         )
+
+    def get_agent_settings(self, filter_key=None):
+        output = None
+        if 'agent_settings' in self.kwargs and 'deployment_config' in self.kwargs['agent_settings']:
+            output = self.kwargs['agent_settings']['deployment_config']
+
+        if filter_key is not None and output is not None:
+            if filter_key in output:
+                output = output[filter_key]
+            
+        return output
 
     def add_to_log(self, msg):
         if not hasattr(self, '_log'):
