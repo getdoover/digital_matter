@@ -1,11 +1,5 @@
 {
     "deployment_package_dir": "processor/",
-    "installers" : [
-        {
-            "name": "default",
-            "package_dir": "device_code/"
-        }
-    ],
     "processor_deployments" : {
         "processors" : [
             {
@@ -15,68 +9,18 @@
         ],
         "tasks" : [
             {
-                "name" : "on_uplink",
+                "name" : "on_dm_connector_recv",
                 "processor_name" : "message_processor",
                 "task_config" : {
-                    "message_type": "UPLINK"
+                    "message_type": "CONNECTOR_RECV"
                 },
                 "subscriptions" : [
                     {
-                        "channel_name" : "dm_oem_uplink_recv",
-                        "is_active" : true
-                    }
-                ]
-            },
-            {
-                "name" : "on_downlink",
-                "processor_name" : "message_processor",
-                "task_config" : {
-                    "message_type": "DOWNLINK"
-                },
-                "subscriptions" : [
-                    {
-                        "channel_name" : "ui_cmds",
-                        "is_active" : true
-                    }
-                ]
-            },
-            {
-                "name" : "on_deploy",
-                "processor_name" : "message_processor",
-                "task_config" : {
-                    "message_type": "DEPLOY"
-                },
-                "subscriptions" : [
-                    {
-                        "channel_name" : "deployments",
+                        "channel_name" : "dm_connector_recv",
                         "is_active" : true
                     }
                 ]
             }
         ]
-    },
-    "deployment_channel_messages" : [
-        {
-            "channel_name" : "ui_cmds",
-            "channel_message" : {
-                "cmds" : {}
-            }
-        },
-        {
-            "channel_name" : "ui_state",
-            "channel_message" : {
-                "state" : null
-            }
-        },
-        {
-            "channel_name" : "location",
-            "channel_message" : {}
-        },
-        {
-            "channel_name" : "deployments",
-            "channel_message" : {
-                "new_deployment" : true
-            }
-        }
-    ]
+    }
 }

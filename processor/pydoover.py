@@ -53,6 +53,15 @@ class doover_api_iface:
             print(r.text)
             return None
 
+    def get_agent_list(self):
+
+        url = "/ch/v1/list_agents/"
+        res = self.make_get_request(
+            url=url,
+            data=None,
+        )
+
+        return json.loads( res.text )
 
     def get_agent_details(self, agent_id):
 
@@ -257,12 +266,13 @@ class agent:
             self,
             agent_id,
             api_client,
+            json_result=None,
         ):
 
         self.agent_id = agent_id
         self.api_client = api_client
 
-        self.json_result = None
+        self.json_result = json_result
 
 
     def update(self):
@@ -270,6 +280,8 @@ class agent:
         result = self.api_client.get_agent_details(self.agent_id)
         self.json_result = result
 
+    def get_agent_id(self):
+        return self.agent_id
 
     def get_channels(self):
 
@@ -295,6 +307,24 @@ class agent:
 
         return result
 
+    def get_settings(self):
+
+        if self.json_result is None:
+            self.update()
+
+        if not 'settings' in self.json_result:
+            return None
+        return self.json_result['settings']
+
+    def get_deployment_config(self):
+
+        if self.json_result is None:
+            self.update()
+
+        settings = self.get_settings()
+        if not 'deployment_config' in settings:
+            return None
+        return settings['deployment_config']
 
 
 class doover_iface:
@@ -330,6 +360,27 @@ class doover_iface:
             agent_id=agent_id,
             api_client=self.api_client
         )
+
+    def get_agents(self):
+
+        agent_list = self.api_client.get_agent_list()
+        result = {}
+        if not 'agents' in agent_list:
+            return result
+        
+        for a in agent_list['agents']:
+
+            agent_id = a['agent']
+
+            new_agent = agent(
+                agent_id=agent_id,
+                api_client=self.api_client,
+                json_result=a
+            )
+
+            result[agent_id] = new_agent
+
+        return result
 
     def get_channel(self, channel_id=None, channel_name=None, agent_id=None):
 
