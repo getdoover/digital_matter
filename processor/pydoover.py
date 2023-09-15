@@ -155,13 +155,14 @@ class message_log:
             api_client,
             channel_id=None,
             message_id=None,
+            json_result=None,
         ):
 
         self.api_client = api_client
 
         self.channel_id = channel_id
         self.message_id = message_id
-        self.json_result = None
+        self.json_result = json_result
 
 
     def update(self):
@@ -268,6 +269,7 @@ class channel:
                     api_client=self.api_client,
                     channel_id=channel_id,
                     message_id=message_id,
+                    json_result=m,
                 )
     
                 result.append(new_message)
