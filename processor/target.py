@@ -367,8 +367,9 @@ class target:
         )
 
         ## Publish a dummy message to oem_uplink to trigger a new process of data
+        oem_uplink_channel_agg = oem_uplink_channel.get_aggregate()
         oem_uplink_channel.publish(
-            msg_str=json.dumps({}),
+            msg_str=json.dumps(oem_uplink_channel_agg),
             save_log=False,
             log_aggregate=False
         )
