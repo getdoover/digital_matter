@@ -68,14 +68,14 @@ class target:
 
     def process_connector_message(self, msg_obj):
 
-        if not 'payload' in msg_obj['payload']:
+        if not 'payload' in msg_obj:
             self.add_to_log( "No payload passed - skipping processing" )
             return
-        if not 'serial_num' in msg_obj['payload']:
+        if not 'SerNo' in msg_obj['payload']:
             self.add_to_log( "No serial number passed - skipping processing" )
             return
         
-        serial_num = msg_obj['payload']['serial_num']
+        serial_num = msg_obj['payload']['SerNo']
 
         agents = self.cli.get_agents()
         self.add_to_log(str(len(agents)) + " accessible agents to process")
