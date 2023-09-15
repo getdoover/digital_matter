@@ -109,6 +109,16 @@ class doover_api_iface:
         )
 
         return json.loads( res.text )
+    
+    def get_messages_in_window(self, channel_id, start_time_utc_secs, end_time_utc_secs):
+
+        url = '/ch/v1/channel/' + str(channel_id) + '/messages/time/' + str(start_time_utc_secs) + '/' + str(end_time_utc_secs) + '/'
+        res = self.make_get_request(
+            url=url,
+            data=None,
+        )
+
+        return json.loads( res.text )
 
 
     def publish_to_channel(self, msg_str, channel_id=None, agent_id=None, channel_name=None):
@@ -238,6 +248,31 @@ class channel:
 
         return result
  
+    def get_messages_in_window(self, start_time_utc_secs, end_time_utc_secs):
+            
+            result = self.api_client.get_messages_in_window(
+                channel_id=self.channel_id,
+                start_time_utc_secs=start_time_utc_secs,
+                end_time_utc_secs=end_time_utc_secs,
+            )
+    
+            messages = result['messages']
+            result = []
+            for m in messages:
+    
+                message_id = m['message']
+                agent_id = m['agent']
+                channel_id = self.channel_id
+    
+                new_message = message_log(
+                    api_client=self.api_client,
+                    channel_id=channel_id,
+                    message_id=message_id,
+                )
+    
+                result.append(new_message)
+    
+            return result
 
     def publish(self, msg_str, save_log=True, log_aggregate=False ):
 
