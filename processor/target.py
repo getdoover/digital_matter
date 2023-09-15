@@ -80,7 +80,7 @@ class target:
         agents = self.cli.get_agents()
         self.add_to_log(str(len(agents)) + " accessible agents to process")
 
-        for a in agents:
+        for ak, a in agents.items():
             deployment_config = a.get_deployment_config()
             if deployment_config is not None and 'DM_SERIAL' in deployment_config:
                 if serial_num == deployment_config['DM_SERIAL']:
