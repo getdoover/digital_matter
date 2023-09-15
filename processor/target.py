@@ -57,7 +57,7 @@ class target:
                 message_type = self.kwargs['package_config']['message_type']
 
             if message_type == "CONNECTOR_RECV":
-                self.process_connector_message()
+                self.process_connector_message(self.kwargs['msg_obj'])
 
         except Exception as e:
             self.add_to_log("ERROR attempting to process message - " + str(e))
