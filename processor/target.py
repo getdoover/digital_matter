@@ -723,11 +723,6 @@ class target:
             self.add_to_log("No deviceRunHours in any messages in window " + str(window_start) + " to " + str(window_end) + ". Running recursively")
             return self.get_average_rates(window_days/2, recursive_count=recursive_count-1, init_hrs_per_day=hours_per_day, init_kms_per_day=kms_per_day)
 
-        if run_hours is not None:
-            hours_per_day = run_hours / window_days
-        if odometer is not None:
-            kms_per_day = odometer / window_days
-
         return {
             'run_hours' : hours_per_day,
             'odometer' : kms_per_day
