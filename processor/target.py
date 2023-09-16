@@ -492,9 +492,26 @@ class target:
                 "setKms" : None,
             }
             if dynamic_hours_offset is not None:
-                cmds['dynamicHoursOffset'] = dynamic_hours_offset
+
+                ## Get the current machine hours
+                ui_state_obj = self.ui_state_channel.get_aggregate()
+                try: current_hours = ui_state_obj['state']['children']['deviceRunHours']['currentValue']
+                except: current_hours = 0
+                if current_hours is None:
+                    current_hours = 0
+
+                cmds['dynamicHoursOffset'] = dynamic_hours_offset - current_hours
+
             if dynamic_odo_offset is not None:
-                cmds['dynamicOdoOffset'] = dynamic_odo_offset
+
+                ## Get the current odo
+                ui_state_obj = self.ui_state_channel.get_aggregate()
+                try: current_odo = ui_state_obj['state']['children']['deviceOdometer']['currentValue']
+                except: current_odo = 0
+                if current_odo is None:
+                    current_odo = 0
+
+                cmds['dynamicOdoOffset'] = dynamic_odo_offset - current_odo
 
             self.ui_cmds_channel.publish(
                 msg_str=json.dumps({
