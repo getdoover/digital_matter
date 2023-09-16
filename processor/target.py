@@ -462,17 +462,13 @@ class target:
             msg_str=json.dumps(ui_obj)
         )
 
-        ## Publish a dummy message to oem_uplink to trigger a new process of data
-        oem_uplink_channel_agg = self.oem_uplink_channel.get_aggregate()
-        self.oem_uplink_channel.publish(
-            msg_str=json.dumps(oem_uplink_channel_agg),
-            save_log=False,
-            log_aggregate=False
-        )
+        self.republish_dummy_msg()
+        
 
     def downlink(self):
         ## Run any downlink processing code here
-        pass
+        
+        self.republish_dummy_msg()
 
 
     def uplink(self):
@@ -638,6 +634,15 @@ class target:
                 save_log=True
             )
 
+    def republish_dummy_msg(self):
+        ## Publish a dummy message to oem_uplink to trigger a new process of data
+        oem_uplink_channel_agg = self.oem_uplink_channel.get_aggregate()
+        self.oem_uplink_channel.publish(
+            msg_str=json.dumps(oem_uplink_channel_agg),
+            save_log=False,
+            log_aggregate=False
+        )
+
     def get_sms_alert_days(self):
         cmds_obj = self.ui_cmds_channel.get_aggregate()
         try: return cmds_obj['cmds']['warningSmsPeriod']
@@ -684,7 +689,7 @@ class target:
         results = [ r for r in results if r is not None ]
         if len(results) > 0:
             selected = min(results)
-            return pytz.timezone('Australia/Brisbane').localize(selected).strftime('%d/%m/%Y')
+            return pytz.timezone('Australia/Brisbane').fromutc(selected).strftime('%d/%m/%Y')
         return None
 
     def get_average_rates(self, window_days, recursive_count=2, init_hrs_per_day=None, init_kms_per_day=None):
