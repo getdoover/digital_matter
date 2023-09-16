@@ -307,28 +307,28 @@ class target:
                                     {
                                         "label" : "Low",
                                         "min" : 3.0,
-                                        "max" : 3.5,
+                                        "max" : 3.7,
                                         "colour" : "yellow",
                                         "showOnGraph" : True
                                     },
                                     {
                                         # "label" : "Ok",
-                                        "min" : 3.5,
-                                        "max" : 3.8,
+                                        "min" : 3.7,
+                                        "max" : 4.2,
                                         "colour" : "blue",
                                         "showOnGraph" : True
                                     },
                                     {
                                         "label" : "Good",
-                                        "min" : 3.8,
-                                        "max" : 4.2,
+                                        "min" : 4.2,
+                                        "max" : 4.7,
                                         "colour" : "green",
                                         "showOnGraph" : True
                                     },
                                     {
                                         "label" : "Over Voltage",
-                                        "min" : 4.2,
-                                        "max" : 4.5,
+                                        "min" : 4.7,
+                                        "max" : 5.2,
                                         "colour" : "yellow",
                                         "showOnGraph" : True
                                     }
