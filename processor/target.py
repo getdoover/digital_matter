@@ -76,6 +76,18 @@ class target:
                 channel_name="location",
                 agent_id=self.kwargs['agent_id']
             )
+
+            ## Get the notifications channel
+            self.notifications_channel = self.cli.get_channel(
+                channel_name="significantEvent",
+                agent_id=self.kwargs['agent_id']
+            )
+
+            ## Get the recent activity channel
+            self.recent_activity_channel = self.cli.get_channel(
+                channel_name="activity_logs",
+                agent_id=self.kwargs['agent_id']
+            )
             
             ## Do any processing you would like to do here
             message_type = None
@@ -453,6 +465,10 @@ class target:
                         "type": "uiHiddenValue",
                         "name": "dynamicOdoOffset"
                     },
+                    "prevDaysTillService": {
+                        "type": "uiHiddenValue",
+                        "name": "prevDaysTillService"
+                    },
                     "node_connection_info": {
                         "type": "uiConnectionInfo",
                         "name": "node_connection_info",
@@ -631,7 +647,11 @@ class target:
 
             ave_rates = self.get_average_rates(self.get_average_use_window_days())
 
-            next_service_est = self.get_next_service_estimate(device_run_hours, device_odometer, ave_rates['run_hours'], ave_rates['odometer'])
+            next_service_est_dt = self.get_next_service_estimate(device_run_hours, device_odometer, ave_rates['run_hours'], ave_rates['odometer'])
+            next_service_est = pytz.timezone('Australia/Brisbane').fromutc(next_service_est_dt).strftime('%d/%m/%Y')
+
+            prev_days_till_service = self.get_prev_days_till_service()
+            prev_days_till_service, service_warning = self.assess_warnings(next_service_est_dt, prev_days_till_service)
 
             self.ui_state_channel.publish(
                 msg_str=json.dumps({
@@ -639,6 +659,7 @@ class target:
                         "displayString" : display_string,
                         "statusIcon" : status_icon,
                         "children" : {
+                            "serviceDueWarning" : service_warning,
                             "location" : {
                                 "currentValue" : position,
                             },
@@ -690,6 +711,9 @@ class target:
                                         "currentValue" : device_time_utc,
                                     }
                                 }
+                            },
+                            "prevDaysTillService": {
+                                "currentValue": prev_days_till_service,
                             }
                         }
                     }
@@ -756,6 +780,11 @@ class target:
         cmds_obj = self.ui_cmds_channel.get_aggregate()
         try: return cmds_obj['cmds']['nextServiceOdo']
         except: return None
+
+    def get_prev_days_till_service(self):
+        state_obj = self.ui_state_channel.get_aggregate()
+        try: return state_obj['state']['children']['prevDaysTillService']['currentValue']
+        except: return None
     
     def get_next_service_estimate(self, curr_hours, device_odometer, ave_run_hours, ave_odometer):
         next_service_est_hours = None
@@ -778,7 +807,7 @@ class target:
         results = [ r for r in results if r is not None ]
         if len(results) > 0:
             selected = min(results)
-            return pytz.timezone('Australia/Brisbane').fromutc(selected).strftime('%d/%m/%Y')
+            return selected
         return None
 
     def get_average_rates(self, window_days, recursive_count=2, init_hrs_per_day=None, init_kms_per_day=None):
@@ -817,8 +846,66 @@ class target:
             'run_hours' : hours_per_day,
             'odometer' : kms_per_day
         }
+    
+    def assess_warnings(self, next_service_est_dt, prev_days_till_service):
 
+        if next_service_est_dt is None:
+            self.add_to_log("No next service estimate - skipping warnings")
+            return
 
+        curr_dt = datetime.datetime.now()
+        time_to_service_days = (next_service_est_dt - curr_dt) / datetime.timedelta(days=1)
+        self.add_to_log("Time to service = " + str(time_to_service_days) + " days")
+
+        warning_days = self.get_sms_alert_days()
+        service_warning = None
+        if time_to_service_days <= warning_days:
+
+            warning_msg = "Service due in " + str(int(time_to_service_days)) + " days"
+            if time_to_service_days < 0:
+                warning_msg = "Service overdue"
+
+            service_warning = {
+                "type": "uiWarningIndicator",
+                "name": "serviceDueWarning",
+                "displayString": warning_msg
+            }
+
+            last_notification_age = self.get_last_notification_age()
+
+            if (prev_days_till_service is None or prev_days_till_service > warning_days) and (last_notification_age is None or last_notification_age > (48 * 60 * 60)):
+                self.add_to_log("Sending SMS alert")
+
+                days_till_service = int(time_to_service_days)
+                msg = "Service is due in " + str(days_till_service) + " days"
+
+                self.notifications_channel.publish(
+                    msg_str=msg
+                )
+                self.recent_activity_channel.publish(
+                    msg_str=json.dumps({
+                        "activity_log" : {
+                            "action_string" : msg
+                        }
+                    })
+                )
+
+        return time_to_service_days, service_warning
+
+        
+    def get_last_notification_age(self):
+        notifications_messages = self.notifications_channel.get_messages()
+
+        last_notification_age = None
+        if len(notifications_messages) > 0:
+            try:
+                last_notif_message = notifications_messages[0].update()
+                last_notification_age = last_notif_message['current_time'] - last_notif_message['timestamp']
+            except Exception as e:
+                self.add_to_log("Could not get age of last notification - " + str(e))
+                pass  
+
+        return last_notification_age
 
     def uplink_reason_translate(self, reason_code):
         reasons = {
