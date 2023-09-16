@@ -685,7 +685,7 @@ class target:
         results = [ r for r in results if r is not None ]
         if len(results) > 0:
             selected = min(results)
-            return pytz.timezone('US/Brisbane').localize(selected).strftime('%d/%m/%Y')
+            return pytz.timezone('Australia/Brisbane').localize(selected).strftime('%d/%m/%Y')
         return None
 
     def get_average_rates(self, window_days, recursive_count=2, init_hrs_per_day=None, init_kms_per_day=None):
