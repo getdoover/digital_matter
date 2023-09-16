@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import os, sys, time, json, datetime, traceback
+import os, sys, time, json, datetime, pytz, traceback
 
 
 ## This is the definition for a tiny lambda function
@@ -124,7 +124,7 @@ class target:
                     },
                     "nextServiceEst" : {
                         "type" : "uiVariable",
-                        "varType" : "date",
+                        "varType" : "text",
                         "name" : "nextServiceEst",
                         "displayString" : "Next Service Estimate",
                     },
@@ -219,13 +219,11 @@ class target:
                             },
                             "nextServiceHours" : {
                                 "type" : "uiFloatParam",
-                                "varType" : "float",
                                 "name" : "nextServiceHours",
                                 "displayString" : "At hours (hrs)",
                             },
                             "nextServiceOdo" : {
                                 "type" : "uiFloatParam",
-                                "varType" : "float",
                                 "name" : "nextServiceOdo",
                                 "displayString" : "And at Odometer (kms)",
                             }
@@ -237,26 +235,22 @@ class target:
                         "displayString": "Config",
                         "children": {
                             "setHours" : {
-                                "type" : "uiVariable",
-                                "varType" : "float",
+                                "type" : "uiFloatParam",
                                 "name" : "setHours",
                                 "displayString" : "Set Machine Hours (hrs)",
                             },
                             "setKms" : {
-                                "type" : "uiVariable",
-                                "varType" : "float",
+                                "type" : "uiFloatParam",
                                 "name" : "setKms",
                                 "displayString" : "Set Odometer (km)",
                             },
                             "warningSmsPeriod" : {
-                                "type" : "uiVariable",
-                                "varType" : "float",
+                                "type" : "uiFloatParam",
                                 "name" : "warningSmsPeriod",
                                 "displayString" : "SMS Alert Period (days)",
                             },
                             "aveCalcDays" : {
-                                "type" : "uiVariable",
-                                "varType" : "float",
+                                "type" : "uiFloatParam",
                                 "name" : "aveCalcDays",
                                 "displayString" : "Ave Use Calculation (days)",
                             }
@@ -686,9 +680,12 @@ class target:
             next_service_est_kms = datetime.datetime.now() + datetime.timedelta(days=days_to_run)
 
         results = [ next_service_est_hours, next_service_est_kms, next_service_est_date ]
+        self.add_to_log("Service estimates = " + str(results) + " for " + str(curr_hours) + " hours and " + str(device_odometer) + " kms")
+
         results = [ r for r in results if r is not None ]
         if len(results) > 0:
-            return min(results)
+            selected = min(results)
+            return pytz.timezone('US/Brisbane').localize(selected).strftime('%d/%m/%Y')
         return None
 
     def get_average_rates(self, window_days, recursive_count=2, init_hrs_per_day=None, init_kms_per_day=None):
