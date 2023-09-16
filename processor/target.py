@@ -804,11 +804,13 @@ class target:
         if 'agent_settings' in self.kwargs and 'deployment_config' in self.kwargs['agent_settings']:
             output = self.kwargs['agent_settings']['deployment_config']
 
-        if filter_key is not None and output is not None:
-            if filter_key in output and output[filter_key] is not None:
+        if filter_key is not None:
+            if output is not None and filter_key in output and output[filter_key] is not None:
                 output = output[filter_key]
                 self.add_to_log("Found agent setting for " + str(filter_key) + " = " + str(output))
-            
+                return output
+            return None
+
         return output
 
     def add_to_log(self, msg):
