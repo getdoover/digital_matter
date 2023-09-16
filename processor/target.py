@@ -521,7 +521,7 @@ class target:
                 if current_odo_offset is None:
                     current_odo_offset = 0
 
-                cmds['dynamicOdoOffset'] = dynamic_odo_offset - current_odo + current_offset
+                cmds['dynamicOdoOffset'] = dynamic_odo_offset - current_odo + current_odo_offset
 
             self.ui_cmds_channel.publish(
                 msg_str=json.dumps({
