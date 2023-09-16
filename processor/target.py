@@ -783,6 +783,12 @@ class target:
 
     def get_average_rates(self, window_days, recursive_count=2, init_hrs_per_day=None, init_kms_per_day=None):
 
+        ## TESTING ONLY
+        return {
+            'run_hours' : 5,
+            'odometer' : 30
+        }
+
         window_start = int( (datetime.datetime.now() - datetime.timedelta(days=window_days)).timestamp() )
         window_end = int( (datetime.datetime.now() - datetime.timedelta(days=(window_days-0.2))).timestamp() )
         
