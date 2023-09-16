@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 import os, sys, time, json, datetime, pytz, traceback
 
-
 ## This is the definition for a tiny lambda function
 ## Which is run in response to messages processed in Doover's 'Channels' system
 
@@ -651,7 +650,7 @@ class target:
     
     def get_next_service_date(self):
         cmds_obj = self.ui_cmds_channel.get_aggregate()
-        try: return cmds_obj['cmds']['nextServiceDue']
+        try: return datetime.datetime.fromtimestamp( cmds_obj['cmds']['nextServiceDue'] )
         except: return None
     
     def get_next_service_hours(self):
