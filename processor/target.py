@@ -131,7 +131,7 @@ class target:
                     "smsServiceAlert": {
                         "type": "uiAlertStream",
                         "name": "significantEvent",
-                        "displayString": ("Text me " + str(self.get_sms_alert_days()) + " in advance of next service"),
+                        "displayString": ("Text me " + str(self.get_sms_alert_days()) + " days before next service"),
                     },
                     "aveHoursPerDay" : {
                         "type" : "uiVariable",
@@ -602,7 +602,7 @@ class target:
                                 "currentValue" : next_service_est,
                             },
                             "smsServiceAlert": {
-                                "displayString": ("Text me " + str(self.get_sms_alert_days()) + " in advance of next service")
+                                "displayString": ("Text me " + str(self.get_sms_alert_days()) + " days before next service")
                             },
                             "aveHoursPerDay" : {
                                 "currentValue": ave_rates['run_hours'],
