@@ -606,26 +606,28 @@ class target:
                                 "currentValue" : speed_kmh,
                             },
                             "details_submodule" : {
-                                "gpsAccuracy" : {
-                                    "currentValue" : gps_accuracy_m,
-                                },
-                                "sysVoltage" : {
-                                    "currentValue" : sys_voltage,
-                                },
-                                "battVoltage" : {
-                                    "currentValue" : batt_voltage,
-                                },
-                                "dataSignalStrength" : {
-                                    "currentValue" : data_signal_strength,
-                                },
-                                "deviceTemp" : {
-                                    "currentValue" : device_temp,
-                                },
-                                "lastUplinkReason" : {
-                                    "currentValue" : self.uplink_reason_translate(device_uplink_reason),
-                                },
-                                "deviceTimeUtc" : {
-                                    "currentValue" : device_time_utc,
+                                "children": {
+                                    "gpsAccuracy" : {
+                                        "currentValue" : gps_accuracy_m,
+                                    },
+                                    "sysVoltage" : {
+                                        "currentValue" : sys_voltage,
+                                    },
+                                    "battVoltage" : {
+                                        "currentValue" : batt_voltage,
+                                    },
+                                    "dataSignalStrength" : {
+                                        "currentValue" : data_signal_strength,
+                                    },
+                                    "deviceTemp" : {
+                                        "currentValue" : device_temp,
+                                    },
+                                    "lastUplinkReason" : {
+                                        "currentValue" : self.uplink_reason_translate(device_uplink_reason),
+                                    },
+                                    "deviceTimeUtc" : {
+                                        "currentValue" : device_time_utc,
+                                    }
                                 }
                             }
                         }
