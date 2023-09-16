@@ -807,6 +807,7 @@ class target:
         if filter_key is not None and output is not None:
             if filter_key in output and output[filter_key] is not None:
                 output = output[filter_key]
+                self.add_to_log("Found agent setting for " + str(filter_key) + " = " + str(output))
             
         return output
 
