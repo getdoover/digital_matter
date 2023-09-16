@@ -693,8 +693,10 @@ class target:
 
     def get_average_rates(self, window_days, recursive_count=2, init_hrs_per_day=None, init_kms_per_day=None):
 
-        window_start = (datetime.datetime.now() - datetime.timedelta(days=window_days)).timestamp()
-        window_end = (datetime.datetime.now() - datetime.timedelta(days=(window_days-0.2))).timestamp()
+        window_start = int( (datetime.datetime.now() - datetime.timedelta(days=window_days)).timestamp() )
+        window_end = int( (datetime.datetime.now() - datetime.timedelta(days=(window_days-0.2))).timestamp() )
+        
+        self.add_to_log("Searching for messages between " + str(window_start) + " to " + str(window_end))
         
         messages = self.ui_state_channel.get_messages_in_window(window_start, window_end)
 
