@@ -445,6 +445,14 @@ class target:
                             }
                         }
                     },
+                    "dynamicHoursOffset": {
+                        "type": "uiHiddenValue",
+                        "name": "dynamicHoursOffset"
+                    },
+                    "dynamicOdoOffset": {
+                        "type": "uiHiddenValue",
+                        "name": "dynamicOdoOffset"
+                    },
                     "node_connection_info": {
                         "type": "uiConnectionInfo",
                         "name": "node_connection_info",
@@ -468,6 +476,32 @@ class target:
     def downlink(self):
         ## Run any downlink processing code here
         
+        ## Handle any new offsets that have been input
+        cmds_obj = self.ui_cmds_channel.get_aggregate()
+
+        try: dynamic_hours_offset = cmds_obj['cmds']['setHours']
+        except: dynamic_hours_offset = None
+
+        try: dynamic_odo_offset = cmds_obj['cmds']['setKms']
+        except: dynamic_odo_offset = None
+        
+        if dynamic_hours_offset is not None or dynamic_odo_offset is not None:
+
+            cmds = {
+                "setHours" : None,
+                "setKms" : None,
+            }
+            if dynamic_hours_offset is not None:
+                cmds['dynamicHoursOffset'] = dynamic_hours_offset
+            if dynamic_odo_offset is not None:
+                cmds['dynamicOdoOffset'] = dynamic_odo_offset
+
+            self.ui_cmds_channel.publish(
+                msg_str=json.dumps({
+                    "cmds" : cmds,
+                })
+            )
+
         self.republish_dummy_msg()
 
 
@@ -539,8 +573,8 @@ class target:
                     device_odometer = f['Odo'] / 100
                     device_run_hours = f['RH'] / (60 * 60)
 
-                    odometer_offset = self.get_agent_settings('ODO_OFFSET')
-                    machine_hours_offset = self.get_agent_settings('MACHINE_HOURS_OFFSET')
+                    odometer_offset = self.get_odo_offset()
+                    machine_hours_offset = self.get_hours_offset()
 
                     if odometer_offset is not None:
                         self.add_to_log("Applying odometer offset of " + str(odometer_offset))
@@ -644,6 +678,32 @@ class target:
             save_log=False,
             log_aggregate=False
         )
+
+    def get_hours_offset(self):
+        cmds_obj = self.ui_cmds_channel.get_aggregate()
+        settings_offset = self.get_agent_settings('MACHINE_HOURS_OFFSET')
+        if settings_offset is not None:
+            self.add_to_log("Applying settings hours offset of " + str(settings_offset))
+            return settings_offset
+        try: dynamic_offset = cmds_obj['cmds']['dynamicHoursOffset']
+        except: dynamic_offset = None
+        if dynamic_offset is not None:
+            self.add_to_log("Applying dynamic hours offset of " + str(dynamic_offset))
+            return dynamic_offset
+        return 0
+    
+    def get_odo_offset(self):
+        cmds_obj = self.ui_cmds_channel.get_aggregate()
+        settings_offset = self.get_agent_settings('ODO_OFFSET')
+        if settings_offset is not None:
+            self.add_to_log("Applying settings odo offset of " + str(settings_offset))
+            return settings_offset
+        try: dynamic_offset = cmds_obj['cmds']['dynamicOdoOffset']
+        except: dynamic_offset = None
+        if dynamic_offset is not None:
+            self.add_to_log("Applying dynamic odo offset of " + str(dynamic_offset))
+            return dynamic_offset
+        return 0
 
     def get_sms_alert_days(self):
         cmds_obj = self.ui_cmds_channel.get_aggregate()
