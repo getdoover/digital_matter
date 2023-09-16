@@ -500,7 +500,12 @@ class target:
                 if current_hours is None:
                     current_hours = 0
 
-                cmds['dynamicHoursOffset'] = dynamic_hours_offset - current_hours
+                ## get the current offset
+                current_offset = self.get_hours_offset()
+                if current_offset is None:
+                    current_offset = 0
+
+                cmds['dynamicHoursOffset'] = dynamic_hours_offset - current_hours + current_offset
 
             if dynamic_odo_offset is not None:
 
@@ -511,7 +516,12 @@ class target:
                 if current_odo is None:
                     current_odo = 0
 
-                cmds['dynamicOdoOffset'] = dynamic_odo_offset - current_odo
+                ## get the current offset
+                current_odo_offset = self.get_odo_offset()
+                if current_odo_offset is None:
+                    current_odo_offset = 0
+
+                cmds['dynamicOdoOffset'] = dynamic_odo_offset - current_odo + current_offset
 
             self.ui_cmds_channel.publish(
                 msg_str=json.dumps({
