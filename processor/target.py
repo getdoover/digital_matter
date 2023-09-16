@@ -579,7 +579,7 @@ class target:
                     status_icon = None
                     display_string = "Running"
 
-            ave_rates = self.get_average_rates(self.get_average_use_window_days(), self.ui_state_channel)
+            ave_rates = self.get_average_rates(self.get_average_use_window_days())
 
             next_service_est = self.get_next_service_estimate(device_run_hours, device_odometer, ave_rates['run_hours'], ave_rates['odometer'])
 
