@@ -463,7 +463,7 @@ class target:
         )
 
         self.republish_dummy_msg()
-        
+
 
     def downlink(self):
         ## Run any downlink processing code here
@@ -805,7 +805,7 @@ class target:
             output = self.kwargs['agent_settings']['deployment_config']
 
         if filter_key is not None and output is not None:
-            if filter_key in output:
+            if filter_key in output and output[filter_key] is not None:
                 output = output[filter_key]
             
         return output
