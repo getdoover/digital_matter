@@ -648,10 +648,15 @@ class target:
             ave_rates = self.get_average_rates(self.get_average_use_window_days())
 
             next_service_est_dt = self.get_next_service_estimate(device_run_hours, device_odometer, ave_rates['run_hours'], ave_rates['odometer'])
-            next_service_est = pytz.timezone('Australia/Brisbane').fromutc(next_service_est_dt).strftime('%d/%m/%Y')
+            
+            next_service_est = None
+            service_warning = None
+            prev_days_till_service = None
+            if next_service_est_dt is not None:
+                next_service_est = pytz.timezone('Australia/Brisbane').fromutc(next_service_est_dt).strftime('%d/%m/%Y')
 
-            prev_days_till_service = self.get_prev_days_till_service()
-            prev_days_till_service, service_warning = self.assess_warnings(next_service_est_dt, prev_days_till_service)
+                prev_days_till_service = self.get_prev_days_till_service()
+                prev_days_till_service, service_warning = self.assess_warnings(next_service_est_dt, prev_days_till_service)
 
             self.ui_state_channel.publish(
                 msg_str=json.dumps({
