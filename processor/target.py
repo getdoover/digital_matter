@@ -826,12 +826,14 @@ class target:
             payload = m.get_payload()
             if payload is not None:
                 if hours_per_day is None:
+                    run_hours = None
                     try: run_hours = payload['state']['children']['deviceRunHours']['currentValue']
                     except: self.add_to_log("No deviceRunHours in message payload " + str(m.message_id))
                     if run_hours is not None:
                         self.add_to_log("found run hours = " + str(run_hours))
                         hours_per_day = run_hours / window_days
                 if kms_per_day is None:
+                    odometer = None
                     try: odometer = payload['state']['children']['deviceOdometer']['currentValue']
                     except: self.add_to_log("No deviceOdometer in message payload " + str(m.message_id))
                     if odometer is not None:
