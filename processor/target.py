@@ -784,12 +784,12 @@ class target:
     
     def get_next_service_hours(self):
         cmds_obj = self.ui_cmds_channel.get_aggregate()
-        try: return cmds_obj['cmds']['nextServiceHours']
+        try: return float(cmds_obj['cmds']['nextServiceHours'])
         except: return None
     
     def get_next_service_kms(self):
         cmds_obj = self.ui_cmds_channel.get_aggregate()
-        try: return cmds_obj['cmds']['nextServiceOdo']
+        try: return float(cmds_obj['cmds']['nextServiceOdo'])
         except: return None
 
     def get_prev_days_till_service(self):
