@@ -270,7 +270,7 @@ class target:
                     "details_submodule": {
                         "type": "uiSubmodule",
                         "name": "details_submodule",
-                        "displayString": "Tracker Details",
+                        "displayString": "Details",
                         "children": {
                             "sysVoltage" : {
                                 "type" : "uiVariable",
@@ -574,6 +574,12 @@ class target:
 
             device_uplink_reason = record['Reason']
             device_time_utc = record['DateUTC']
+            device_time_local_str = device_time_utc
+            try: 
+                device_time_utc_dt = datetime.datetime.strptime(device_time_utc, '%Y-%m-%d %H:%M:%S UTC') #2023-09-21 01:09:47 UTC
+                device_time_local_str = pytz.timezone('Australia/Brisbane').fromutc(device_time_utc_dt).strftime('%d/%m/%Y %H:%M:%S')
+            except:
+                self.add_to_log("Error parsing device time " + str(device_time_utc) + " - " + str(traceback.format_exc()))
 
             position = None
             gps_accuracy_m = None
@@ -713,7 +719,7 @@ class target:
                                         "currentValue" : self.uplink_reason_translate(device_uplink_reason),
                                     },
                                     "deviceTimeUtc" : {
-                                        "currentValue" : device_time_utc,
+                                        "currentValue" : device_time_local_str,
                                     }
                                 }
                             },
