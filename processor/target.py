@@ -453,7 +453,7 @@ class target:
                                 "type" : "uiVariable",
                                 "varType" : "datetime",
                                 "name" : "deviceTimeUtc",
-                                "displayString" : "Device Time (UTC)",
+                                "displayString" : "Device Time",
                             }
                         }
                     },
@@ -576,7 +576,7 @@ class target:
             device_time_utc = record['DateUTC']
             device_time_local_str = device_time_utc
             try: 
-                device_time_utc_dt = datetime.datetime.strptime(device_time_utc, '%Y-%m-%d %H:%M:%S UTC') #2023-09-21 01:09:47 UTC
+                device_time_utc_dt = datetime.datetime.strptime(device_time_utc, '%Y-%m-%d %H:%M:%S') #2023-09-21 01:09:47 UTC
                 device_time_local_str = pytz.timezone('Australia/Brisbane').fromutc(device_time_utc_dt).strftime('%d/%m/%Y %H:%M:%S')
             except:
                 self.add_to_log("Error parsing device time " + str(device_time_utc) + " - " + str(traceback.format_exc()))
