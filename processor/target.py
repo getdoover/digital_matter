@@ -144,6 +144,18 @@ class target:
                         "name": "significantEvent",
                         "displayString": ("Text me " + str(self.get_sms_alert_days()) + " days before next service"),
                     },
+                    "hoursTillNextService" : {
+                        "type" : "uiVariable",
+                        "varType" : "float",
+                        "name" : "hoursTillNextService",
+                        "displayString" : "Hours till next service",
+                    },
+                    "kmsTillNextService" : {
+                        "type" : "uiVariable",
+                        "varType" : "float",
+                        "name" : "kmsTillNextService",
+                        "displayString" : "Kms till next service",
+                    },
                     "aveHoursPerDay" : {
                         "type" : "uiVariable",
                         "varType" : "float",
@@ -469,6 +481,14 @@ class target:
                         "type": "uiHiddenValue",
                         "name": "prevDaysTillService"
                     },
+                    "rawRunHours": {
+                        "type": "uiHiddenValue",
+                        "name": "rawRunHours"
+                    },
+                    "rawOdometer": {
+                        "type": "uiHiddenValue",
+                        "name": "rawOdometer"
+                    },
                     "node_connection_info": {
                         "type": "uiConnectionInfo",
                         "name": "node_connection_info",
@@ -585,7 +605,9 @@ class target:
             gps_accuracy_m = None
             speed_kmh = None
             ignition_on = None
+            raw_run_hours = None
             device_run_hours = None
+            raw_odometer = None
             device_odometer = None
             sys_voltage = None
             batt_voltage = None
@@ -619,8 +641,11 @@ class target:
                     data_signal_strength = round( f['AnalogueData']['4'] * (100/31) ) ## Signal quality between 0-31
 
                 if f['FType'] == 27:
-                    device_odometer = f['Odo'] / 100
-                    device_run_hours = f['RH'] / (60 * 60)
+                    raw_odometer = f['Odo'] / 100
+                    device_odometer = raw_odometer
+
+                    raw_run_hours = f['RH'] / (60 * 60)
+                    device_run_hours = raw_run_hours
 
                     odometer_offset = self.get_odo_offset()
                     machine_hours_offset = self.get_hours_offset()
@@ -651,10 +676,18 @@ class target:
                     status_icon = None
                     display_string = "Running"
 
-            ave_rates = self.get_average_rates(self.get_average_use_window_days())
+            ave_rates = self.get_average_rates(raw_run_hours, device_run_hours, raw_odometer, device_odometer, self.get_average_use_window_days())
 
             next_service_est_dt = self.get_next_service_estimate(device_run_hours, device_odometer, ave_rates['run_hours'], ave_rates['odometer'])
             
+            hours_till_next_service = None
+            if self.get_next_service_hours() is not None and device_run_hours is not None:
+                hours_till_next_service = self.get_next_service_hours() - device_run_hours
+
+            kms_till_next_service = None
+            if self.get_next_service_kms() is not None and device_odometer is not None:
+                kms_till_next_service = self.get_next_service_kms() - device_odometer
+
             next_service_est = None
             service_warning = None
             prev_days_till_service = None
@@ -686,6 +719,12 @@ class target:
                             "smsServiceAlert": {
                                 "displayString": ("Text me " + str(self.get_sms_alert_days()) + " days before next service")
                             },
+                            "hoursTillNextService" : {
+                                "currentValue" : hours_till_next_service,
+                            },
+                            "kmsTillNextService" : {
+                                "currentValue" : kms_till_next_service,
+                            },
                             "aveHoursPerDay" : {
                                 "currentValue": ave_rates['run_hours'],
                             },
@@ -698,6 +737,8 @@ class target:
                             "speed" : {
                                 "currentValue" : speed_kmh,
                             },
+                            "maintenance_submodule" : {},
+                            "config_submodule" : {},
                             "details_submodule" : {
                                 "children": {
                                     "gpsAccuracy" : {
@@ -725,6 +766,12 @@ class target:
                             },
                             "prevDaysTillService": {
                                 "currentValue": prev_days_till_service,
+                            },
+                            "rawRunHours": {
+                                "currentValue": raw_run_hours,
+                            },
+                            "rawOdometer": {
+                                "currentValue": raw_odometer,
                             }
                         }
                     }
@@ -821,10 +868,10 @@ class target:
             return selected
         return None
 
-    def get_average_rates(self, window_days, recursive_count=2, init_hrs_per_day=None, init_kms_per_day=None):
+    def get_average_rates(self, raw_curr_hours, curr_hours, raw_curr_odo, curr_odo, window_days, recursive_count=2, init_hrs_per_day=None, init_kms_per_day=None):
 
         window_start = int( (datetime.datetime.now() - datetime.timedelta(days=window_days)).timestamp() )
-        window_end = int( (datetime.datetime.now() - datetime.timedelta(days=(window_days-0.2))).timestamp() )
+        window_end = int( (datetime.datetime.now() - datetime.timedelta(days=(window_days-0.3))).timestamp() )
         
         self.add_to_log("Searching for messages between " + str(window_start) + " to " + str(window_end))
         
@@ -837,23 +884,45 @@ class target:
             payload = m.get_payload()
             if payload is not None:
                 if hours_per_day is None:
+                    raw_run_hours = None
                     run_hours = None
-                    try: run_hours = payload['state']['children']['deviceRunHours']['currentValue']
-                    except: self.add_to_log("No deviceRunHours in message payload " + str(m.message_id))
-                    if run_hours is not None:
+
+                    ## try using raw hours first
+                    try: 
+                        raw_run_hours = payload['state']['children']['rawRunHours']['currentValue']
+                    except: 
+                        self.add_to_log("No rawRunHours in message payload " + str(m.message_id))
+                        try: run_hours = payload['state']['children']['deviceRunHours']['currentValue']
+                        except: self.add_to_log("No deviceRunHours in message payload " + str(m.message_id))
+
+                    if raw_run_hours is not None:
+                        self.add_to_log("found raw run hours = " + str(raw_run_hours))
+                        hours_per_day = (raw_curr_hours - raw_run_hours) / window_days
+                    elif run_hours is not None:
                         self.add_to_log("found run hours = " + str(run_hours))
-                        hours_per_day = run_hours / window_days
+                        hours_per_day = (curr_hours - run_hours) / window_days
+
                 if kms_per_day is None:
+                    raw_odometer = None
                     odometer = None
-                    try: odometer = payload['state']['children']['deviceOdometer']['currentValue']
-                    except: self.add_to_log("No deviceOdometer in message payload " + str(m.message_id))
-                    if odometer is not None:
+
+                    ## try using raw odo first
+                    try: raw_odometer = payload['state']['children']['rawOdometer']['currentValue']
+                    except: 
+                        self.add_to_log("No rawOdometer in message payload " + str(m.message_id))
+                        try: odometer = payload['state']['children']['deviceOdometer']['currentValue']
+                        except: self.add_to_log("No deviceOdometer in message payload " + str(m.message_id))
+
+                    if raw_odometer is not None:
+                        self.add_to_log("found raw odometer = " + str(raw_odometer))
+                        kms_per_day = (raw_curr_odo - raw_odometer) / window_days
+                    elif odometer is not None:
                         self.add_to_log("found initial odometer = " + str(odometer))
-                        kms_per_day = odometer / window_days
+                        kms_per_day = (curr_odo - odometer) / window_days
 
         if recursive_count > 0 and (hours_per_day is None or kms_per_day is None):
             self.add_to_log("No deviceRunHours in any messages in window " + str(window_start) + " to " + str(window_end) + ". Running recursively")
-            return self.get_average_rates(window_days/2, recursive_count=recursive_count-1, init_hrs_per_day=hours_per_day, init_kms_per_day=kms_per_day)
+            return self.get_average_rates(raw_curr_hours, curr_hours, raw_curr_odo, curr_odo, window_days/2, recursive_count=recursive_count-1, init_hrs_per_day=hours_per_day, init_kms_per_day=kms_per_day)
 
         return {
             'run_hours' : hours_per_day,
@@ -889,6 +958,9 @@ class target:
             if (prev_days_till_service is None or prev_days_till_service > warning_days) and (last_notification_age is None or last_notification_age > (48 * 60 * 60)):
                 self.add_to_log("Sending SMS alert")
 
+                ## record the last notification time to prevent multiple notifications
+                self.set_last_notification_time()
+
                 days_till_service = int(time_to_service_days)
                 msg = "Service is due in " + str(days_till_service) + " days"
 
@@ -905,8 +977,22 @@ class target:
 
         return time_to_service_days, service_warning
 
+    def set_last_notification_time(self, timestamp=None):
+        if timestamp is None:
+            timestamp = int(time.time())
+        self.last_notification_time = timestamp
+
+    def get_internal_last_notification_age(self):
+        if hasattr(self, 'last_notification_time') and self.last_notification_time is not None:
+            return int(int(time.time()) - self.last_notification_time)
+        return None
         
     def get_last_notification_age(self):
+
+        internal_last_notification_age = self.get_internal_last_notification_age()
+        if internal_last_notification_age is not None:
+            return internal_last_notification_age
+
         notifications_messages = self.notifications_channel.get_messages()
 
         last_notification_age = None
