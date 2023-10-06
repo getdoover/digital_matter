@@ -729,6 +729,7 @@ class target:
 
             next_service_est = None
             service_warning = None
+            days_till_service_due = None
             prev_days_till_service = None
             if next_service_est_dt is not None:
                 next_service_est = pytz.timezone('Australia/Brisbane').fromutc(next_service_est_dt).strftime('%d/%m/%Y')
@@ -736,11 +737,11 @@ class target:
                 prev_days_till_service = self.get_prev_days_till_service()
                 days_till_service_due, service_warning = self.assess_warnings(next_service_est_dt, prev_days_till_service)
 
-                days_till_service_due_disp = None
-                if days_till_service_due is not None:
-                    days_till_service_due_disp = int(days_till_service_due)
+            days_till_service_due_disp = None
+            if days_till_service_due is not None:
+                days_till_service_due_disp = int(days_till_service_due)
 
-                prev_days_till_service = days_till_service_due
+            prev_days_till_service = days_till_service_due
 
 
             self.ui_state_channel.publish(
