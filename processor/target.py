@@ -903,17 +903,17 @@ class target:
 
     def get_service_interval_months(self):
         cmds_obj = self.ui_cmds_channel.get_aggregate()
-        try: return cmds_obj['cmds']['serviceIntervalMonths']
+        try: return float(cmds_obj['cmds']['serviceIntervalMonths'])
         except: return None
 
     def get_service_interval_hours(self):
         cmds_obj = self.ui_cmds_channel.get_aggregate()
-        try: return cmds_obj['cmds']['serviceIntervalHours']
+        try: return float(cmds_obj['cmds']['serviceIntervalHours'])
         except: return None
 
     def get_service_interval_kms(self):
         cmds_obj = self.ui_cmds_channel.get_aggregate()
-        try: return cmds_obj['cmds']['serviceIntervalOdo']
+        try: return float(cmds_obj['cmds']['serviceIntervalOdo'])
         except: return None
     
     def get_next_service_date(self):
