@@ -241,18 +241,36 @@ class target:
                                 "name" : "lastServiceOdo",
                                 "displayString" : "And at Odometer (kms)",
                             },
+                            "serviceIntervalMonths" : {
+                                "type" : "uiFloatParam",
+                                "name" : "serviceIntervalMonths",
+                                "displayString" : "Service Interval (months)",
+                            },
+                            "serviceIntervalHours" : {
+                                "type" : "uiFloatParam",
+                                "name" : "serviceIntervalHours",
+                                "displayString" : "Service Interval (hrs)",
+                            },
+                            "serviceIntervalOdo" : {
+                                "type" : "uiFloatParam",
+                                "name" : "serviceIntervalOdo",
+                                "displayString" : "Service Interval (kms)",
+                            },
                             "nextServiceDue" : {
-                                "type" : "uiDatetimeParam",
+                                "type" : "uiVariable",
+                                "varType" : "text",
                                 "name" : "nextServiceDue",
                                 "displayString" : "Next Service due",
                             },
                             "nextServiceHours" : {
-                                "type" : "uiFloatParam",
+                                "type" : "uiVariable",
+                                "varType" : "float",
                                 "name" : "nextServiceHours",
                                 "displayString" : "At hours (hrs)",
                             },
                             "nextServiceOdo" : {
-                                "type" : "uiFloatParam",
+                                "type" : "uiVariable",
+                                "varType" : "float",
                                 "name" : "nextServiceOdo",
                                 "displayString" : "And at Odometer (kms)",
                             }
@@ -686,13 +704,22 @@ class target:
 
             next_service_est_dt = self.get_next_service_estimate(device_run_hours, device_odometer, ave_rates['run_hours'], ave_rates['odometer'])
             
+            next_service_date = self.get_next_service_date()
+            next_service_hours = self.get_next_service_hours()
+            next_service_kms = self.get_next_service_kms()
+
+            next_service_date_str = None
+            if next_service_date is not None:
+                # next_service_date_str = pytz.timezone('Australia/Brisbane').fromutc(next_service_date).strftime('%d/%m/%Y')
+                next_service_date_str = next_service_date.strftime('%d/%m/%Y')
+
             hours_till_next_service = None
-            if self.get_next_service_hours() is not None and device_run_hours is not None:
-                hours_till_next_service = self.get_next_service_hours() - device_run_hours
+            if next_service_hours is not None and device_run_hours is not None:
+                hours_till_next_service = next_service_hours - device_run_hours
 
             kms_till_next_service = None
-            if self.get_next_service_kms() is not None and device_odometer is not None:
-                kms_till_next_service = self.get_next_service_kms() - device_odometer
+            if next_service_kms is not None and device_odometer is not None:
+                kms_till_next_service = next_service_kms - device_odometer
 
             next_service_est = None
             service_warning = None
@@ -746,7 +773,19 @@ class target:
                             "speed" : {
                                 "currentValue" : speed_kmh,
                             },
-                            "maintenance_submodule" : {},
+                            "maintenance_submodule" : {
+                                "children": {
+                                    "nextServiceDue" : {
+                                        "currentValue" : next_service_date_str,
+                                    },
+                                    "nextServiceHours" : {
+                                        "currentValue" : next_service_hours,
+                                    },
+                                    "nextServiceOdo" : {
+                                        "currentValue" : next_service_kms,
+                                    },
+                                }
+                            },
                             "config_submodule" : {},
                             "details_submodule" : {
                                 "children": {
@@ -832,21 +871,72 @@ class target:
         cmds_obj = self.ui_cmds_channel.get_aggregate()
         try: return cmds_obj['cmds']['aveCalcDays']
         except: return 14
+
+    def get_last_service_date(self):
+        cmds_obj = self.ui_cmds_channel.get_aggregate()
+        try: return datetime.datetime.fromtimestamp( cmds_obj['cmds']['lastServiceDate'] )
+        except: return None
+
+    def get_last_service_hours(self):
+        cmds_obj = self.ui_cmds_channel.get_aggregate()
+        try: return float(cmds_obj['cmds']['lastServiceHours'])
+        except: return None
+
+    def get_last_service_kms(self):
+        cmds_obj = self.ui_cmds_channel.get_aggregate()
+        try: return float(cmds_obj['cmds']['lastServiceOdo'])
+        except: return None
+
+    def get_service_interval_months(self):
+        cmds_obj = self.ui_cmds_channel.get_aggregate()
+        try: return cmds_obj['cmds']['serviceIntervalMonths']
+        except: return None
+
+    def get_service_interval_hours(self):
+        cmds_obj = self.ui_cmds_channel.get_aggregate()
+        try: return cmds_obj['cmds']['serviceIntervalHours']
+        except: return None
+
+    def get_service_interval_kms(self):
+        cmds_obj = self.ui_cmds_channel.get_aggregate()
+        try: return cmds_obj['cmds']['serviceIntervalOdo']
+        except: return None
     
     def get_next_service_date(self):
-        cmds_obj = self.ui_cmds_channel.get_aggregate()
-        try: return datetime.datetime.fromtimestamp( cmds_obj['cmds']['nextServiceDue'] )
-        except: return None
+        last_service_date = self.get_last_service_date()
+        if last_service_date is None:
+            return None
+
+        service_interval_months = self.get_service_interval_months()
+        if service_interval_months is None:
+            return None
+        
+        next_service_date = last_service_date + datetime.timedelta(months=service_interval_months)
+        return next_service_date
     
     def get_next_service_hours(self):
-        cmds_obj = self.ui_cmds_channel.get_aggregate()
-        try: return float(cmds_obj['cmds']['nextServiceHours'])
-        except: return None
+        last_service_hours = self.get_last_service_hours()
+        if last_service_hours is None:
+            return None
+        
+        service_interval_hours = self.get_service_interval_hours()
+        if service_interval_hours is None:
+            return None
+        
+        next_service_hours = last_service_hours + service_interval_hours
+        return next_service_hours
     
     def get_next_service_kms(self):
-        cmds_obj = self.ui_cmds_channel.get_aggregate()
-        try: return float(cmds_obj['cmds']['nextServiceOdo'])
-        except: return None
+        last_service_kms = self.get_last_service_kms()
+        if last_service_kms is None:
+            return None
+        
+        service_interval_kms = self.get_service_interval_kms()
+        if service_interval_kms is None:
+            return None
+        
+        next_service_kms = last_service_kms + service_interval_kms
+        return next_service_kms
 
     def get_prev_days_till_service(self):
         state_obj = self.ui_state_channel.get_aggregate()
