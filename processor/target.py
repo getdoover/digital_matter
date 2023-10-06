@@ -124,7 +124,7 @@ class target:
                         "varType" : "float",
                         "name" : "deviceRunHours",
                         "displayString" : "Machine Hours (hrs)",
-                        "decPrecision": 2,
+                        "decPrecision": 1,
                     },
                     "deviceOdometer" : {
                         "type" : "uiVariable",
@@ -139,6 +139,12 @@ class target:
                         "name" : "nextServiceEst",
                         "displayString" : "Next Service Estimate",
                     },
+                    "daysTillNextService" : {
+                        "type" : "uiVariable",
+                        "varType" : "text",
+                        "name" : "daysTillNextService",
+                        "displayString" : "Days To Next Service",
+                    },
                     "smsServiceAlert": {
                         "type": "uiAlertStream",
                         "name": "significantEvent",
@@ -148,13 +154,13 @@ class target:
                         "type" : "uiVariable",
                         "varType" : "float",
                         "name" : "hoursTillNextService",
-                        "displayString" : "Hours till next service",
+                        "displayString" : "Hours To Next Service",
                     },
                     "kmsTillNextService" : {
                         "type" : "uiVariable",
                         "varType" : "float",
                         "name" : "kmsTillNextService",
-                        "displayString" : "Kms till next service",
+                        "displayString" : "Kms Till Next Service",
                     },
                     "aveHoursPerDay" : {
                         "type" : "uiVariable",
@@ -715,6 +721,9 @@ class target:
                             },
                             "nextServiceEst" : {
                                 "currentValue" : next_service_est,
+                            },
+                            "daysTillNextService" : {
+                                "currentValue" : prev_days_till_service,
                             },
                             "smsServiceAlert": {
                                 "displayString": ("Text me " + str(self.get_sms_alert_days()) + " days before next service")
