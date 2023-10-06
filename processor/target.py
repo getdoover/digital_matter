@@ -260,7 +260,7 @@ class target:
                                 "type" : "uiVariable",
                                 "varType" : "text",
                                 "name" : "nextServiceDue",
-                                "displayString" : "Next Service due",
+                                "displayString" : "Next Service due (latest)",
                             },
                             "nextServiceHours" : {
                                 "type" : "uiVariable",
