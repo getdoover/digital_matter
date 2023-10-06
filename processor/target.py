@@ -144,7 +144,7 @@ class target:
                         "type" : "uiVariable",
                         "varType" : "text",
                         "name" : "daysTillNextService",
-                        "displayString" : "Days To Next Service",
+                        "displayString" : "Days To Next Service (days)",
                     },
                     "smsServiceAlert": {
                         "type": "uiAlertStream",
