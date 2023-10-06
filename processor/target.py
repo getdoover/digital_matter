@@ -142,7 +142,7 @@ class target:
                     },
                     "daysTillNextService" : {
                         "type" : "uiVariable",
-                        "varType" : "text",
+                        "varType" : "float",
                         "name" : "daysTillNextService",
                         "displayString" : "Days To Next Service (days)",
                     },
