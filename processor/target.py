@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import os, sys, time, json, datetime, pytz, traceback
+import os, sys, time, json, datetime, pytz, traceback, math
 from dateutil.relativedelta import relativedelta
 
 ## This is the definition for a tiny lambda function
@@ -247,6 +247,7 @@ class target:
                             "serviceIntervalMonths" : {
                                 "type" : "uiFloatParam",
                                 "min" : 0,
+                                "max" : 60,
                                 "name" : "serviceIntervalMonths",
                                 "displayString" : "Service Interval (months)",
                             },
@@ -923,6 +924,10 @@ class target:
 
         service_interval_months = self.get_service_interval_months()
         if service_interval_months is None:
+            return None
+        
+        service_interval_months = math.ceil(service_interval_months)
+        if service_interval_months == 0:
             return None
         
         try:
