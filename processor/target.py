@@ -145,6 +145,7 @@ class target:
                         "varType" : "float",
                         "name" : "daysTillNextService",
                         "displayString" : "Days To Next Service (days)",
+                        "decPrecision": 0,
                     },
                     "smsServiceAlert": {
                         "type": "uiAlertStream",
