@@ -157,12 +157,14 @@ class target:
                         "varType" : "float",
                         "name" : "hoursTillNextService",
                         "displayString" : "Hours To Next Service",
+                        "decPrecision": 1,
                     },
                     "kmsTillNextService" : {
                         "type" : "uiVariable",
                         "varType" : "float",
                         "name" : "kmsTillNextService",
                         "displayString" : "Kms Till Next Service",
+                        "decPrecision": 1,
                     },
                     "aveHoursPerDay" : {
                         "type" : "uiVariable",
