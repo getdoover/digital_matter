@@ -234,26 +234,31 @@ class target:
                             },
                             "lastServiceHours" : {
                                 "type" : "uiFloatParam",
+                                "min" : 0,
                                 "name" : "lastServiceHours",
                                 "displayString" : "At hours (hrs)",
                             },
                             "lastServiceOdo" : {
                                 "type" : "uiFloatParam",
+                                "min" : 0,
                                 "name" : "lastServiceOdo",
                                 "displayString" : "And at Odometer (kms)",
                             },
                             "serviceIntervalMonths" : {
                                 "type" : "uiFloatParam",
+                                "min" : 0,
                                 "name" : "serviceIntervalMonths",
                                 "displayString" : "Service Interval (months)",
                             },
                             "serviceIntervalHours" : {
                                 "type" : "uiFloatParam",
+                                "min" : 0,
                                 "name" : "serviceIntervalHours",
                                 "displayString" : "Service Interval (hrs)",
                             },
                             "serviceIntervalOdo" : {
                                 "type" : "uiFloatParam",
+                                "min" : 0,
                                 "name" : "serviceIntervalOdo",
                                 "displayString" : "Service Interval (kms)",
                             },
@@ -729,7 +734,14 @@ class target:
                 next_service_est = pytz.timezone('Australia/Brisbane').fromutc(next_service_est_dt).strftime('%d/%m/%Y')
 
                 prev_days_till_service = self.get_prev_days_till_service()
-                prev_days_till_service, service_warning = self.assess_warnings(next_service_est_dt, prev_days_till_service)
+                days_till_service_due, service_warning = self.assess_warnings(next_service_est_dt, prev_days_till_service)
+
+                days_till_service_due_disp = None
+                if days_till_service_due is not None:
+                    days_till_service_due_disp = int(days_till_service_due)
+
+                prev_days_till_service = days_till_service_due
+
 
             self.ui_state_channel.publish(
                 msg_str=json.dumps({
@@ -751,7 +763,7 @@ class target:
                                 "currentValue" : next_service_est,
                             },
                             "daysTillNextService" : {
-                                "currentValue" : prev_days_till_service,
+                                "currentValue" : days_till_service_due_disp,
                             },
                             "smsServiceAlert": {
                                 "displayString": ("Text me " + str(self.get_sms_alert_days()) + " days before next service")
@@ -912,9 +924,12 @@ class target:
         if service_interval_months is None:
             return None
         
-        # next_service_date = last_service_date + datetime.timedelta(months=service_interval_months)
-        next_service_date = last_service_date + relativedelta(months=service_interval_months)
-        return next_service_date
+        try:
+            # return last_service_date + datetime.timedelta(months=service_interval_months)
+            return last_service_date + relativedelta(months=service_interval_months)
+        except Exception as e:
+            self.add_to_log("Error calculating next service date " + str(e))
+            return None
     
     def get_next_service_hours(self):
         last_service_hours = self.get_last_service_hours()
@@ -1063,7 +1078,12 @@ class target:
                 self.set_last_notification_time()
 
                 days_till_service = int(time_to_service_days)
-                msg = "Service is due in " + str(days_till_service) + " days"
+                if days_till_service > 0:
+                    msg = "Service is due in " + str(days_till_service) + " days"
+                elif days_till_service == 0:
+                    msg = "Service is due today"
+                else:
+                    msg = "Service is overdue by " + str(abs(days_till_service)) + " days"
 
                 self.notifications_channel.publish(
                     msg_str=msg
