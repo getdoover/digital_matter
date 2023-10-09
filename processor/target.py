@@ -193,37 +193,6 @@ class target:
                         "name" : "location",
                         "displayString" : "Location",
                     },
-                    "speed" : {
-                        "type" : "uiVariable",
-                        "varType" : "float",
-                        "name" : "speed",
-                        "displayString" : "Speed (km/h)",
-                        "decPrecision": 1,
-                        "form": "radialGauge",
-                        "ranges": [
-                            {
-                                "label" : "Low",
-                                "min" : 0,
-                                "max" : 20,
-                                "colour" : "blue",
-                                "showOnGraph" : True
-                            },
-                            {
-                                # "label" : "Ok",
-                                "min" : 20,
-                                "max" : 80,
-                                "colour" : "green",
-                                "showOnGraph" : True
-                            },
-                            {
-                                "label" : "Fast",
-                                "min" : 80,
-                                "max" : 120,
-                                "colour" : "yellow",
-                                "showOnGraph" : True
-                            }
-                        ]
-                    },
                     "maintenance_submodule": {
                         "type": "uiSubmodule",
                         "name": "maintenance_submodule",
@@ -318,6 +287,37 @@ class target:
                         "name": "details_submodule",
                         "displayString": "Details",
                         "children": {
+                            "speed" : {
+                                "type" : "uiVariable",
+                                "varType" : "float",
+                                "name" : "speed",
+                                "displayString" : "Speed (km/h)",
+                                "decPrecision": 1,
+                                "form": "radialGauge",
+                                "ranges": [
+                                    {
+                                        "label" : "Low",
+                                        "min" : 0,
+                                        "max" : 20,
+                                        "colour" : "blue",
+                                        "showOnGraph" : True
+                                    },
+                                    {
+                                        # "label" : "Ok",
+                                        "min" : 20,
+                                        "max" : 80,
+                                        "colour" : "green",
+                                        "showOnGraph" : True
+                                    },
+                                    {
+                                        "label" : "Fast",
+                                        "min" : 80,
+                                        "max" : 120,
+                                        "colour" : "yellow",
+                                        "showOnGraph" : True
+                                    }
+                                ]
+                            },
                             "sysVoltage" : {
                                 "type" : "uiVariable",
                                 "varType" : "float",
@@ -788,9 +788,6 @@ class target:
                             "ignitionOn" : {
                                 "currentValue" : ignition_on,
                             },
-                            "speed" : {
-                                "currentValue" : speed_kmh,
-                            },
                             "maintenance_submodule" : {
                                 "children": {
                                     "nextServiceDue" : {
@@ -807,6 +804,9 @@ class target:
                             "config_submodule" : {},
                             "details_submodule" : {
                                 "children": {
+                                    "speed" : {
+                                        "currentValue" : speed_kmh,
+                                    },
                                     "gpsAccuracy" : {
                                         "currentValue" : gps_accuracy_m,
                                     },
