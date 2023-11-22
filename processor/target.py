@@ -527,10 +527,8 @@ class target:
                         "type": "uiConnectionInfo",
                         "name": "node_connection_info",
                         "connectionType": "periodic",
-                        # "connectionPeriod": 1800,
-                        # "nextConnection": 1800
-                        "connectionPeriod": 600,
-                        "nextConnection": 600,
+                        "connectionPeriod": 1800,
+                        "nextConnection": 1800
                     }
                 }
             }
