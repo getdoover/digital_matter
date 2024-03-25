@@ -528,7 +528,8 @@ class target:
                         "name": "node_connection_info",
                         "connectionType": "periodic",
                         "connectionPeriod": 1800,
-                        "nextConnection": 1800
+                        "nextConnection": 1800,
+                        "allowedMisses": 48,
                     }
                 }
             }
