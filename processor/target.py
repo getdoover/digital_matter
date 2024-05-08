@@ -973,12 +973,12 @@ class target:
         next_service_est_kms = None
         next_service_est_date = self.get_next_service_date()
 
-        if curr_hours is not None and ave_run_hours is not None and self.get_next_service_hours() is not None:
+        if curr_hours is not None and ave_run_hours is not None and ave_run_hours > 0 and self.get_next_service_hours() is not None:
             hours_to_run = self.get_next_service_hours() - curr_hours
             days_to_run = hours_to_run / ave_run_hours
             next_service_est_hours = datetime.datetime.now() + datetime.timedelta(days=days_to_run)
 
-        if device_odometer is not None and ave_odometer is not None and self.get_next_service_kms() is not None:
+        if device_odometer is not None and ave_odometer is not None and ave_odometer > 0 and self.get_next_service_kms() is not None:
             kms_to_run = self.get_next_service_kms() - device_odometer
             days_to_run = kms_to_run / ave_odometer
             next_service_est_kms = datetime.datetime.now() + datetime.timedelta(days=days_to_run)
