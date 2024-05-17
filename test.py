@@ -8,7 +8,7 @@ import shutil
 
 
 def main():
-    processor_package_dir = "helloworld"
+    processor_package_dir = "processor"
     shutil.make_archive("temp_processor_package", 'zip', processor_package_dir)
     with open("temp_processor_package.zip", "rb") as f:
         zip_bytes = f.read()

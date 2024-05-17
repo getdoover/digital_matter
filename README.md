@@ -12,5 +12,5 @@ For more information about Doover - go to Doover.com
 
 From within the root directory, run 
 ```bash
- pip install /path/to/pydoover -t processor/project --no-dependencies
+ pip install /path/to/pydoover -t processor/ --no-dependencies
  ```
