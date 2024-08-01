@@ -668,10 +668,13 @@ class target:
                     ignition_on = (f['DIn'] & 0b001 != 0)
 
                 if f['FType'] == 6:
-                    batt_voltage = f['AnalogueData']['1'] / 1000
-                    sys_voltage = f['AnalogueData']['2'] / 100
-                    device_temp = f['AnalogueData']['3'] / 100
-                    data_signal_strength = round( f['AnalogueData']['4'] * (100/31) ) ## Signal quality between 0-31
+                    try:
+                        batt_voltage = f['AnalogueData']['1'] / 1000
+                        sys_voltage = f['AnalogueData']['2'] / 100
+                        device_temp = f['AnalogueData']['3'] / 100
+                        data_signal_strength = round( f['AnalogueData']['4'] * (100/31) ) ## Signal quality between 0-31
+                    except Exception as e:
+                        self.add_to_log("Error parsing analogue data " + str(f['AnalogueData']) + " - " + str(e))
 
                 if f['FType'] == 27:
                     raw_odometer = f['Odo'] / 100
