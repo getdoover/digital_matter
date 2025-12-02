@@ -36,9 +36,10 @@ class doover_api_iface:
                 print(r.text)
             return r
         else:
+            r.raise_for_status()
             print("ERROR : " + str(r.status_code))
             print(r.text)
-            return None
+            return r
 
 
     def make_post_request(self, url, data=None):
@@ -97,14 +98,14 @@ class doover_api_iface:
             ).text
         )
 
-        msgs_res = json.loads(
-            self.make_get_request(
-                url=msgs_url,
-                data=None,
-            ).text
-        )
-
-        res['messages'] = msgs_res['messages']
+        # msgs_res = json.loads(
+        #     self.make_get_request(
+        #         url=msgs_url,
+        #         data=None,
+        #     ).text
+        # )
+        #
+        # res['messages'] = msgs_res['messages']
 
         return res
 

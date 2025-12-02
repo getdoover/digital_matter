@@ -1,23 +1,37 @@
 {
     "deployment_package_dir": "processor/",
-    "processor_deployments" : {
-        "processors" : [
+    "processor_deployments": {
+        "processors": [
             {
-                "name" : "message_processor",
-                "processor_package_dir" : "processor/"
+                "name": "message_processor",
+                "processor_package_dir": "processor/"
             }
         ],
-        "tasks" : [
+        "tasks": [
             {
-                "name" : "on_dm_connector_recv",
-                "processor_name" : "message_processor",
-                "task_config" : {
+                "name": "on_dm_connector_recv",
+                "processor_name": "message_processor",
+                "task_config": {
                     "message_type": "CONNECTOR_RECV"
                 },
-                "subscriptions" : [
+                "subscriptions": [
                     {
-                        "channel_name" : "dm_connector_recv",
-                        "is_active" : true
+                        "channel_name": "dm_connector_recv",
+                        "is_active": true
+                    }
+                ]
+            },
+            {
+                "name": "sync_digitalmatter_devices",
+                "processor_name": "message_processor",
+                "task_config": {
+                    "message_type": "SYNC_SERIAL_NUM_AGENT_IDS"
+                },
+                "min_time_between_invocations": 3600,
+                "subscriptions": [
+                    {
+                        "channel_name": "trigger_sync_dm_serial_num",
+                        "is_active": true
                     }
                 ]
             }

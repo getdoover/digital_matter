@@ -1,5 +1,8 @@
 #!/usr/bin/python3
-import os, sys, time, json, traceback
+import sys
+import time
+import json
+import traceback
 
 
 ## This is the definition for a tiny lambda function
@@ -22,6 +25,8 @@ except: pass
 
 # sys.path.append(os.path.dirname(__file__))
 import pydoover as pd
+
+SERIAL_AGENT_MAP_CHANNEL_NAME = "dm_agent_map"
 
 
 class target:
@@ -53,11 +58,15 @@ class target:
             
             ## Do any processing you would like to do here
             message_type = None
-            if 'message_type' in self.kwargs['package_config'] and 'message_type' is not None:
+            if 'message_type' in self.kwargs['package_config'] and 'message_type' != None:
                 message_type = self.kwargs['package_config']['message_type']
 
             if message_type == "CONNECTOR_RECV":
                 self.process_connector_message(self.kwargs['msg_obj'])
+            if message_type == "SYNC_SERIAL_NUM_AGENT_IDS":
+                self.sync_serial_num_agent_ids()
+                return
+
 
         except Exception as e:
             self.add_to_log("ERROR attempting to process message - " + str(e))
@@ -68,39 +77,72 @@ class target:
 
     def process_connector_message(self, msg_obj):
 
-        if not 'payload' in msg_obj:
+        if 'payload' not in msg_obj:
             self.add_to_log( "No payload passed - skipping processing" )
             return
-        if not 'SerNo' in msg_obj['payload']:
+        if 'SerNo' not in msg_obj['payload']:
             self.add_to_log( "No serial number passed - skipping processing" )
             return
         
         serial_num = msg_obj['payload']['SerNo']
 
+        # agents = self.cli.get_agents()
+        # self.add_to_log(str(len(agents)) + " accessible agents to process")
+
+        # for ak, a in agents.items():
+        #     deployment_config = a.get_deployment_config()
+        #     if deployment_config is not None and 'DM_SERIAL' in deployment_config:
+        #         if serial_num == deployment_config['DM_SERIAL']:
+        #             agent_key = a.get_agent_id()
+        #             self.add_to_log('Found agent ' + str(agent_key) + " with matching serial number " + str(serial_num))
+
+        channel = self.cli.get_channel(channel_name=SERIAL_AGENT_MAP_CHANNEL_NAME, agent_id=self.kwargs["agent_id"])
+        aggregate = channel.get_aggregate()
+
+        try:
+            agent_key = aggregate[str(serial_num)]
+        except KeyError:
+            self.add_to_log(f"No agent with serial number {serial_num} found.")
+            return
+
+        self.add_to_log(f"Found agent {agent_key} (SER# {serial_num})")
+
+        self.cli.api_client.publish_to_channel(
+            msg_str=json.dumps(msg_obj['payload']),
+            agent_id=agent_key,
+            channel_name="dm_oem_uplink_recv"
+        )
+
+        # destination_channel = self.cli.get_channel(
+        #     channel_name="dm_oem_uplink_recv",
+        #     agent_id=agent_key
+        # )
+        #
+        # destination_channel.publish(
+        #     msg_str=json.dumps(msg_obj['payload'])
+        # )
+
+        self.add_to_log("Published to dm_oem_uplink_recv channel")
+        return
+
+    def sync_serial_num_agent_ids(self):
         agents = self.cli.get_agents()
-        self.add_to_log(str(len(agents)) + " accessible agents to process")
+        self.add_to_log(f"{len(agents)} accessible agents to process")
 
-        for ak, a in agents.items():
-            deployment_config = a.get_deployment_config()
-            if deployment_config is not None and 'DM_SERIAL' in deployment_config:
-                if serial_num == deployment_config['DM_SERIAL']:
-                    agent_key = a.get_agent_id()
-                    self.add_to_log('Found agent ' + str(agent_key) + " with matching serial number " + str(serial_num))
+        lookup = {}
 
-                    destination_channel = self.cli.get_channel(
-                        channel_name="dm_oem_uplink_recv",
-                        agent_id=agent_key
-                    )
+        for agent in agents.values():
+            config = agent.get_deployment_config()
+            try:
+                serial_number = config["DM_SERIAL"]
+            except KeyError:
+                pass
+            else:
+                lookup[serial_number] = agent.agent_id
+                self.add_to_log(f"Found agent {agent.agent_id} with matching serial number {serial_number}")
 
-                    destination_channel.publish(
-                        msg_str=json.dumps(msg_obj['payload'])
-                    )
-
-                    self.add_to_log("Published to dm_oem_uplink_recv channel")
-                    return
-
-        self.add_to_log("Did not find an agent with matching DM_SERIAL deployment config")
-
+        self.add_to_log(f"Syncing serial numbers to agent keys: {lookup}")
+        self.cli.api_client.publish_to_channel(json.dumps(lookup), agent_id=self.kwargs['agent_id'], channel_name=SERIAL_AGENT_MAP_CHANNEL_NAME)
 
     def create_doover_client(self):
         self.cli = pd.doover_iface(
