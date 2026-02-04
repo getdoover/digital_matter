@@ -219,7 +219,7 @@
     },
     "digital_matter_processor": {
         "name": "digital_matter_processor",
-        "display_name": "Digital Matter Device UI",
+        "display_name": "Digital Matter Device",
         "type": "PRO",
         "visibility": "PUB",
         "allow_many": true,
