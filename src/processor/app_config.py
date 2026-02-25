@@ -29,6 +29,7 @@ class DigitalMatterProcessorConfig(config.Schema):
             description="Whether to hide the default UI. Useful if you have a custom UI application.",
             default=False,
         )
+        self.position = config.ApplicationPosition()
 
 
 def export():

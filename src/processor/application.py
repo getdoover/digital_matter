@@ -6,7 +6,6 @@ from pydoover.cloud.processor import (
     MessageCreateEvent,
 )
 from pydoover.cloud.processor.types import ConnectionStatus
-from pydoover.ui import ApplicationVariant
 
 from .app_config import DigitalMatterProcessorConfig
 from .app_ui import DigitalMatterUI
@@ -22,6 +21,7 @@ class DigitalMatterProcessor(Application):
         self.ui = DigitalMatterUI()
         self.ui_manager.add_children(*self.ui.fetch())
         self.ui_manager._base_container.hidden = self.config.hide_ui.value
+        self.ui_manager.set_position(self.config.position.value)
 
     async def on_message_create(self, event: MessageCreateEvent):
         """
@@ -39,15 +39,9 @@ class DigitalMatterProcessor(Application):
         # Update UI with telemetry data
         self.ui.update(
             data,
-            odometer_offset=self.config.odometer_offset_km.value or 0.0,
-            run_hours_offset=self.config.run_hours_offset.value or 0.0,
+            odometer_offset=self.config.odometer_offset_km.value,
+            run_hours_offset=self.config.run_hours_offset.value,
         )
-
-        # Update status display and icon
-        display_string, status_icon = self.ui.get_status_display(data)
-        self.ui_manager.set_display_name(display_string)
-        if status_icon:
-            self.ui_manager.set_status_icon(status_icon)
 
         # Publish location to the location channel if we have a valid position
         position = data.get("position")
@@ -69,3 +63,8 @@ class DigitalMatterProcessor(Application):
 
         # Push UI updates to connected clients
         await self.ui_manager.push_async()
+
+        if "run_hours" in data:
+            await self.set_tag("run_hours", data["run_hours"] + self.config.run_hours_offset.value)
+        if "odometer_km" in data:
+            await self.set_tag("odometer_km", data["odometer_km"] + self.config.odometer_offset_km.value)

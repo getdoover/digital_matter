@@ -172,23 +172,3 @@ class DigitalMatterUI:
         # Device time
         if "device_time_utc" in data:
             self.device_time.update(data["device_time_utc"])
-
-    def get_status_display(self, data: dict) -> tuple[str, str | None]:
-        """
-        Get status display string and icon based on device state.
-
-        Returns:
-            Tuple of (display_string, status_icon)
-        """
-        ignition_on = data.get("ignition_on")
-        speed = data.get("speed_kmh", 0)
-
-        if ignition_on is None:
-            return "Unknown", None
-
-        if not ignition_on:
-            return "Off", "off"
-        elif speed is None or speed <= 1:
-            return "Idle", "idle"
-        else:
-            return "Running", None

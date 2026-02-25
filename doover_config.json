@@ -238,7 +238,7 @@
         "display_name": "Digital Matter Device",
         "type": "PRO",
         "visibility": "PUB",
-        "allow_many": true,
+        "allow_many": false,
         "description": "Processor for Digital Matter devices providing UI and location tracking",
         "long_description": "README.md",
         "icon_url": "https://sense.digitalmatter.com/hubfs/Imported%20sitepage%20images/Digital-Matter-Logo-Feature.png",
@@ -324,6 +324,20 @@
                     "description": "Whether to hide the default UI. Useful if you have a custom UI application.",
                     "default": false,
                     "x-position": 4
+                },
+                "dv-app-position": {
+                    "title": "Position",
+                    "x-name": "dv-app-position",
+                    "x-hidden": false,
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "x-required": false,
+                    "description": "Position of Application in UI Structure. Smaller numbers are closer to the top.",
+                    "default": 50,
+                    "x-position": 5,
+                    "minimum": 0
                 }
             },
             "additionalElements": true,
