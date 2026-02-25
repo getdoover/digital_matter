@@ -199,7 +199,12 @@ class DigitalMatterIntegration(Application):
             return
 
         # Look up the agent ID for this serial number
-        device_mapping = await self.get_tag("dm_devices", {})
+        try:
+            device_mapping = self._tag_values["digital_matter_processor-1"]["serial_number_lookup"]
+        except KeyError:
+            log.info(f"Serial numbers not found. Tags: {self._tag_values}. Skipping...")
+            return
+
         agent_id = device_mapping.get(str(serial_number))
 
         log.info(f"Serial: {serial_number}, Agent ID: {agent_id}, Mapping: {device_mapping}")

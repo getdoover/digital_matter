@@ -21,7 +21,7 @@ class DigitalMatterProcessor(Application):
     async def setup(self):
         self.ui = DigitalMatterUI()
         self.ui_manager.add_children(*self.ui.fetch())
-        self.ui_manager.set_variant(ApplicationVariant.stacked)
+        self.ui_manager._base_container.hidden = self.config.hide_ui.value
 
     async def on_message_create(self, event: MessageCreateEvent):
         """
@@ -45,7 +45,7 @@ class DigitalMatterProcessor(Application):
 
         # Update status display and icon
         display_string, status_icon = self.ui.get_status_display(data)
-        self.ui_manager.set_display_string(display_string)
+        self.ui_manager.set_display_name(display_string)
         if status_icon:
             self.ui_manager.set_status_icon(status_icon)
 

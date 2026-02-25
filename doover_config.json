@@ -33,6 +33,7 @@
                     "type": "object",
                     "x-required": true,
                     "description": "Ingestion Endpoint configuration",
+                    "x-position": 0,
                     "properties": {
                         "cidr_ranges": {
                             "title": "CIDR Ranges",
@@ -41,6 +42,7 @@
                             "type": "array",
                             "x-required": true,
                             "description": "Accepted CIDR ranges for incoming requests",
+                            "x-position": 1,
                             "items": {
                                 "title": "IP Range, e.g. 1.234.56.78/24 or 110.220.120.1/32",
                                 "x-name": "ip_range,_e.g._1.234.56.78/24_or_110.220.120.1/32",
@@ -59,7 +61,8 @@
                             ],
                             "x-required": false,
                             "description": "Private SHA256 signing key for the request. While not recommended, this may be `None` if no signed hash verification is required.",
-                            "default": ""
+                            "default": "",
+                            "x-position": 2
                         },
                         "sha256_hash_header": {
                             "title": "SHA256 Hash Header",
@@ -71,7 +74,8 @@
                             ],
                             "x-required": false,
                             "description": "Header key for the hash of the signed payload (defaults to x-hmac-sha256 if signing_key is present)",
-                            "default": "x-hmac-sha256"
+                            "default": "x-hmac-sha256",
+                            "x-position": 3
                         },
                         "throttle": {
                             "title": "Throttle",
@@ -84,6 +88,7 @@
                             "x-required": false,
                             "description": "The number of requests to allow per second. Due to internal limits, this cannot exceed 30.",
                             "default": 10,
+                            "x-position": 4,
                             "maximum": 30
                         },
                         "never_replace_token": {
@@ -96,7 +101,8 @@
                             ],
                             "x-required": false,
                             "description": "Enable this if the token is difficult to change and must never change. This is not recommended from a security standpoint, however may be necessary in some situations.If this option is disabled and then enabled, a new token will be generated at that point.",
-                            "default": false
+                            "default": false,
+                            "x-position": 5
                         },
                         "mini_token": {
                             "title": "Mini Token",
@@ -108,13 +114,16 @@
                             ],
                             "x-required": false,
                             "description": "Enable this to generate a mini token for use with the ingestion endpoint. Mini tokens are ~70 bytes, compared with the ~900 bytes of a regular token. Generally, this is not advised as it adds complexity and latency to ingestion calls, however may be desirable in especially low-bandwidth and embedded environments. There is no security difference in the two tokens.",
-                            "default": false
+                            "default": false,
+                            "x-position": 6
                         }
                     },
                     "additionalElements": true,
                     "required": [
                         "cidr_ranges"
-                    ]
+                    ],
+                    "x-collapsible": true,
+                    "x-defaultCollapsed": false
                 },
                 "dv_proc_extended_permissions": {
                     "title": "Extended Permissions",
@@ -123,6 +132,7 @@
                     "type": "object",
                     "x-required": true,
                     "description": "Enable extended permissions and access to other devices.",
+                    "x-position": 1,
                     "properties": {
                         "devices": {
                             "title": "Devices",
@@ -131,6 +141,7 @@
                             "type": "array",
                             "x-required": true,
                             "description": "List of devices to grant extended permissions to.",
+                            "x-position": 1,
                             "items": {
                                 "title": "Device",
                                 "x-name": "device",
@@ -149,6 +160,7 @@
                             "type": "array",
                             "x-required": true,
                             "description": "List of groups to grant permissions to.",
+                            "x-position": 2,
                             "items": {
                                 "title": "Group",
                                 "x-name": "group",
@@ -167,6 +179,7 @@
                             "type": "array",
                             "x-required": true,
                             "description": "Permission will be given to any devices which have any of the apps listed installed.",
+                            "x-position": 3,
                             "items": {
                                 "title": "Application",
                                 "x-name": "application",
@@ -187,7 +200,8 @@
                             ],
                             "x-required": false,
                             "description": "Permission will be given for all devices in this organisation. This is a very far-reaching permission to grant!",
-                            "default": false
+                            "default": false,
+                            "x-position": 4
                         }
                     },
                     "additionalElements": true,
@@ -195,7 +209,9 @@
                         "devices",
                         "groups",
                         "apps_installed"
-                    ]
+                    ],
+                    "x-collapsible": true,
+                    "x-defaultCollapsed": false
                 }
             },
             "additionalElements": true,
@@ -251,6 +267,7 @@
                     "type": "array",
                     "x-required": true,
                     "description": "A list of channels to subscribe to.",
+                    "x-position": 0,
                     "items": {
                         "title": "Channel Subscription",
                         "x-name": "dv_proc_subscription",
@@ -270,7 +287,8 @@
                     ],
                     "x-required": false,
                     "description": "Offset to add to the device odometer reading",
-                    "default": 0.0
+                    "default": 0.0,
+                    "x-position": 1
                 },
                 "run_hours_offset": {
                     "title": "Run Hours Offset",
@@ -282,12 +300,36 @@
                     ],
                     "x-required": false,
                     "description": "Offset to add to the device run hours reading",
-                    "default": 0.0
+                    "default": 0.0,
+                    "x-position": 2
+                },
+                "dv_serial_number": {
+                    "title": "Serial Number",
+                    "x-name": "dv_serial_number",
+                    "x-hidden": false,
+                    "type": "string",
+                    "x-required": true,
+                    "description": "Digital Matter Serial Number",
+                    "x-position": 3
+                },
+                "hide_default_ui": {
+                    "title": "Hide Default UI",
+                    "x-name": "hide_default_ui",
+                    "x-hidden": false,
+                    "type": [
+                        "boolean",
+                        "null"
+                    ],
+                    "x-required": false,
+                    "description": "Whether to hide the default UI. Useful if you have a custom UI application.",
+                    "default": false,
+                    "x-position": 4
                 }
             },
             "additionalElements": true,
             "required": [
-                "dv_proc_subscriptions"
+                "dv_proc_subscriptions",
+                "dv_serial_number"
             ]
         },
         "id": "144762160331931663",

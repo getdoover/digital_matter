@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from pydoover import config
-from pydoover.cloud.processor import ManySubscriptionConfig
+from pydoover.cloud.processor import ManySubscriptionConfig, SerialNumberConfig
 
 
 class DigitalMatterProcessorConfig(config.Schema):
@@ -18,6 +18,16 @@ class DigitalMatterProcessorConfig(config.Schema):
             "Run Hours Offset",
             description="Offset to add to the device run hours reading",
             default=0.0,
+        )
+
+        self.serial_number = SerialNumberConfig(
+            description="Digital Matter Serial Number",
+        )
+
+        self.hide_ui = config.Boolean(
+            "Hide Default UI",
+            description="Whether to hide the default UI. Useful if you have a custom UI application.",
+            default=False,
         )
 
 
