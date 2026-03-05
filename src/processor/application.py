@@ -46,6 +46,7 @@ class DigitalMatterProcessor(Application):
         # Publish location to the location channel if we have a valid position
         position = data.get("position")
         if position is not None:
+            await self.api.update_aggregate(self.agent_id, "location", position, replace=True)
             await self.api.publish_message(
                 self.agent_id,
                 "location",
