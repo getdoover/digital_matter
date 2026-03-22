@@ -26,4 +26,4 @@ dev = [
 ]
 
 [tool.uv.sources]
-pydoover = { git = "https://github.com/getdoover/pydoover", rev = "edb8f5e3756a3cc3112fd25ed2205dd082b9be82" }
+pydoover = { git = "https://github.com/getdoover/pydoover", rev = "957272deef770044c59c49bc585d6d5f0f5d0eed" }
