@@ -257,7 +257,7 @@
         "config_schema": {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
             "$id": "",
-            "title": "Application Config",
+            "title": "$default",
             "type": "object",
             "properties": {
                 "dv_proc_subscriptions": {
@@ -328,7 +328,7 @@
                 "dv-app-position": {
                     "title": "Position",
                     "x-name": "dv-app-position",
-                    "x-hidden": false,
+                    "x-hidden": true,
                     "type": [
                         "integer",
                         "null"
