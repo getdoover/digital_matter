@@ -2,16 +2,12 @@ import base64
 import json
 import logging
 
-from pydoover.cloud.processor import (
-    Application,
-    IngestionEndpointEvent,
-)
+from pydoover.processor import Application
+from pydoover.models import IngestionEndpointEvent
 
 from .app_config import DigitalMatterIntegrationConfig
 
-
 log = logging.getLogger(__name__)
-
 
 # Digital Matter uplink reason codes
 UPLINK_REASONS = {
@@ -141,9 +137,9 @@ def parse_dm_record(record: dict) -> dict:
 
         elif ftype == 27:
             # Odometer and run hours
-            # Odometer in cm, convert to km
+            # Odometer in m, convert to km
             if "Odo" in field:
-                result["odometer_km"] = field["Odo"] / 100000
+                result["odometer_km"] = field["Odo"] / 100
             # Run hours in seconds, convert to hours
             if "RH" in field:
                 result["run_hours"] = field["RH"] / 3600
@@ -158,6 +154,7 @@ def parse_dm_record(record: dict) -> dict:
 
 class DigitalMatterIntegration(Application):
     config: DigitalMatterIntegrationConfig
+    config_cls = DigitalMatterIntegrationConfig
 
     async def setup(self):
         log.info("Digital Matter integration initialized")
@@ -200,14 +197,22 @@ class DigitalMatterIntegration(Application):
 
         # Look up the agent ID for this serial number
         try:
-            device_mapping = self._tag_values["digital_matter_processor-1"]["serial_number_lookup"]
+            device_mapping = self.tag_manager.get_tag(
+                "serial_number_lookup",
+                app_key="digital_matter_processor-1",
+                raise_key_error=True,
+            )
         except KeyError:
-            log.info(f"Serial numbers not found. Tags: {self._tag_values}. Skipping...")
+            log.info(
+                f"Serial numbers not found. Tags: {self.tag_manager._tag_values}. Skipping..."
+            )
             return
 
         agent_id = device_mapping.get(str(serial_number))
 
-        log.info(f"Serial: {serial_number}, Agent ID: {agent_id}, Mapping: {device_mapping}")
+        log.info(
+            f"Serial: {serial_number}, Agent ID: {agent_id}, Mapping: {device_mapping}"
+        )
 
         # Parse and process each record
         records = payload.get("Records", [])
@@ -216,17 +221,9 @@ class DigitalMatterIntegration(Application):
             parsed["serial_number"] = serial_number
 
             # Store the raw event on this integration's agent
-            await self.api.publish_message(
-                self.agent_id,
-                "dm_events",
-                parsed
-            )
+            await self.api.create_message("dm_events", parsed)
 
             # Forward to the device agent if we have a mapping
             if agent_id:
                 log.info(f"Forwarding to agent {agent_id}: {parsed}")
-                await self.api.publish_message(
-                    agent_id,
-                    "on_dm_event",
-                    parsed
-                )
+                await self.api.create_message("on_dm_event", parsed, agent_id=agent_id)

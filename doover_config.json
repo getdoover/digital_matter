@@ -10,6 +10,7 @@
         "icon_url": "https://sense.digitalmatter.com/hubfs/Imported%20sitepage%20images/Digital-Matter-Logo-Feature.png",
         "depends_on": [],
         "export_config_command": "export-config-integration",
+        "export_ui_command": "NO_EXPORT",
         "lambda_config": {
             "Environment": {},
             "Runtime": "python3.13",
@@ -23,7 +24,7 @@
         "config_schema": {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
             "$id": "",
-            "title": "Application Config",
+            "title": "$default",
             "type": "object",
             "properties": {
                 "dv_proc_ingestion": {
@@ -44,11 +45,12 @@
                             "description": "Accepted CIDR ranges for incoming requests",
                             "x-position": 1,
                             "items": {
-                                "title": "IP Range, e.g. 1.234.56.78/24 or 110.220.120.1/32",
-                                "x-name": "ip_range,_e.g._1.234.56.78/24_or_110.220.120.1/32",
+                                "title": "IP Range",
+                                "x-name": "ip_range",
                                 "x-hidden": false,
                                 "type": "string",
-                                "x-required": true
+                                "x-required": true,
+                                "description": "IP Range, e.g. 1.234.56.78/24 or 110.220.120.1/32"
                             }
                         },
                         "signing_key": {
@@ -126,12 +128,12 @@
                     "x-defaultCollapsed": false
                 },
                 "dv_proc_extended_permissions": {
-                    "title": "Extended Permissions",
+                    "title": "Devices",
                     "x-name": "dv_proc_extended_permissions",
                     "x-hidden": false,
                     "type": "object",
                     "x-required": true,
-                    "description": "Enable extended permissions and access to other devices.",
+                    "description": "Give Permission to access devices.",
                     "x-position": 1,
                     "properties": {
                         "devices": {
@@ -229,7 +231,9 @@
         "repo_branch": "main",
         "image_name": null,
         "banner_url": null,
-        "staging_config": {},
+        "staging_config": {
+            "id": "156563631524299528"
+        },
         "run_command": null,
         "lambda_arn": null
     },
@@ -355,7 +359,9 @@
         "repo_branch": "main",
         "image_name": null,
         "banner_url": null,
-        "staging_config": {},
+        "staging_config": {
+            "id": "156563568559407877"
+        },
         "run_command": null,
         "lambda_arn": null
     }
