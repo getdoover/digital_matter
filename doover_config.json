@@ -768,88 +768,165 @@
             "type": "uiApplication",
             "name": "$config.app().APP_KEY",
             "children": {
-                "trip_type": {
-                    "name": "trip_type",
-                    "type": "uiVariable",
-                    "displayString": "Trip Type",
-                    "showActivity": true,
-                    "position": 51,
-                    "hidden": false,
-                    "varType": "string",
-                    "currentValue": "$tag.app().trip_type:string:null"
-                },
-                "ignition": {
-                    "name": "ignition",
-                    "type": "uiVariable",
-                    "displayString": "Ignition",
-                    "showActivity": true,
-                    "position": 52,
-                    "hidden": false,
-                    "varType": "bool",
-                    "currentValue": "$tag.app().ignition:boolean:null"
-                },
-                "external_power": {
-                    "name": "external_power",
-                    "type": "uiVariable",
-                    "displayString": "External Power",
-                    "showActivity": true,
-                    "position": 53,
-                    "hidden": false,
-                    "varType": "bool",
-                    "currentValue": "$tag.app().ext_power_good:boolean:null"
-                },
-                "gps_fix_current": {
-                    "name": "gps_fix_current",
-                    "type": "uiVariable",
-                    "displayString": "GPS Fix Current",
-                    "showActivity": true,
-                    "position": 54,
-                    "hidden": false,
-                    "varType": "bool",
-                    "currentValue": "$tag.app().gps_current:boolean:null"
-                },
                 "speed": {
                     "name": "speed",
                     "type": "uiVariable",
                     "displayString": "Speed",
                     "showActivity": true,
-                    "position": 55,
+                    "position": 51,
                     "hidden": false,
                     "units": "km/h",
                     "varType": "float",
                     "currentValue": "$tag.app().speed_kmh:number:null",
-                    "decPrecision": 0
-                },
-                "heading": {
-                    "name": "heading",
-                    "type": "uiVariable",
-                    "displayString": "Heading",
-                    "showActivity": true,
-                    "position": 56,
-                    "hidden": false,
-                    "units": "\u00b0",
-                    "varType": "float",
-                    "currentValue": "$tag.app().heading_deg:number:null",
-                    "decPrecision": 0
+                    "decPrecision": 0,
+                    "ranges": [
+                        {
+                            "min": 0,
+                            "max": 20,
+                            "colour": "blue",
+                            "show_on_graph": true,
+                            "label": "Low"
+                        },
+                        {
+                            "min": 20,
+                            "max": 80,
+                            "colour": "green",
+                            "show_on_graph": true,
+                            "label": "Normal"
+                        },
+                        {
+                            "min": 80,
+                            "max": 120,
+                            "colour": "yellow",
+                            "show_on_graph": true,
+                            "label": "Fast"
+                        }
+                    ]
                 },
                 "gps_accuracy": {
                     "name": "gps_accuracy",
                     "type": "uiVariable",
                     "displayString": "GPS Accuracy",
                     "showActivity": true,
-                    "position": 57,
+                    "position": 52,
                     "hidden": false,
                     "units": "m",
                     "varType": "float",
                     "currentValue": "$tag.app().gps_accuracy_m:number:null",
+                    "decPrecision": 0,
+                    "ranges": [
+                        {
+                            "min": 0,
+                            "max": 15,
+                            "colour": "green",
+                            "show_on_graph": true,
+                            "label": "Good"
+                        },
+                        {
+                            "min": 15,
+                            "max": 30,
+                            "colour": "blue",
+                            "show_on_graph": true,
+                            "label": "OK"
+                        },
+                        {
+                            "min": 30,
+                            "max": 80,
+                            "colour": "yellow",
+                            "show_on_graph": true,
+                            "label": "Bad"
+                        },
+                        {
+                            "min": 80,
+                            "max": 100,
+                            "colour": "red",
+                            "show_on_graph": true,
+                            "label": "Lost"
+                        }
+                    ]
+                },
+                "ignition_on": {
+                    "name": "ignition_on",
+                    "type": "uiVariable",
+                    "displayString": "Ignition On",
+                    "showActivity": true,
+                    "position": 53,
+                    "hidden": false,
+                    "varType": "bool",
+                    "currentValue": "$tag.app().ignition:boolean:null"
+                },
+                "runtime": {
+                    "name": "runtime",
+                    "type": "uiVariable",
+                    "displayString": "Runtime",
+                    "showActivity": true,
+                    "position": 54,
+                    "hidden": false,
+                    "units": "s",
+                    "varType": "float",
+                    "currentValue": "$tag.app().runtime_s:number:null",
                     "decPrecision": 0
                 },
-                "battery": {
-                    "name": "battery",
+                "odometer": {
+                    "name": "odometer",
                     "type": "uiVariable",
-                    "displayString": "Battery",
+                    "displayString": "Odometer",
                     "showActivity": true,
-                    "position": 58,
+                    "position": 55,
+                    "hidden": false,
+                    "units": "km",
+                    "varType": "float",
+                    "currentValue": "$tag.app().odometer_km:number:null",
+                    "decPrecision": 1
+                },
+                "system_voltage": {
+                    "name": "system_voltage",
+                    "type": "uiVariable",
+                    "displayString": "System Voltage",
+                    "showActivity": true,
+                    "position": 56,
+                    "hidden": false,
+                    "units": "V",
+                    "varType": "float",
+                    "currentValue": "$tag.app().external_v:number:null",
+                    "decPrecision": 1,
+                    "ranges": [
+                        {
+                            "min": 9,
+                            "max": 11.5,
+                            "colour": "yellow",
+                            "show_on_graph": true,
+                            "label": "Low"
+                        },
+                        {
+                            "min": 11.5,
+                            "max": 13.0,
+                            "colour": "blue",
+                            "show_on_graph": true,
+                            "label": "Normal"
+                        },
+                        {
+                            "min": 13.0,
+                            "max": 14.2,
+                            "colour": "green",
+                            "show_on_graph": true,
+                            "label": "Charging"
+                        },
+                        {
+                            "min": 14.2,
+                            "max": 15.0,
+                            "colour": "yellow",
+                            "show_on_graph": true,
+                            "label": "Over Voltage"
+                        }
+                    ]
+                },
+                "tracker_battery": {
+                    "name": "tracker_battery",
+                    "type": "uiVariable",
+                    "displayString": "Tracker Battery",
+                    "showActivity": true,
+                    "position": 57,
                     "hidden": false,
                     "units": "V",
                     "varType": "float",
@@ -879,17 +956,59 @@
                         }
                     ]
                 },
-                "external_voltage": {
-                    "name": "external_voltage",
+                "device_temperature": {
+                    "name": "device_temperature",
                     "type": "uiVariable",
-                    "displayString": "External Voltage",
+                    "displayString": "Device Temperature",
+                    "showActivity": true,
+                    "position": 58,
+                    "hidden": false,
+                    "units": "\u00b0C",
+                    "varType": "float",
+                    "currentValue": "$tag.app().temperature_c:number:null",
+                    "decPrecision": 0,
+                    "ranges": [
+                        {
+                            "min": -20,
+                            "max": 0,
+                            "colour": "blue",
+                            "show_on_graph": true,
+                            "label": "Cold"
+                        },
+                        {
+                            "min": 0,
+                            "max": 35,
+                            "colour": "green",
+                            "show_on_graph": true,
+                            "label": "Normal"
+                        },
+                        {
+                            "min": 35,
+                            "max": 50,
+                            "colour": "yellow",
+                            "show_on_graph": true,
+                            "label": "Warm"
+                        },
+                        {
+                            "min": 50,
+                            "max": 70,
+                            "colour": "red",
+                            "show_on_graph": true,
+                            "label": "Hot"
+                        }
+                    ]
+                },
+                "heading": {
+                    "name": "heading",
+                    "type": "uiVariable",
+                    "displayString": "Heading",
                     "showActivity": true,
                     "position": 59,
                     "hidden": false,
-                    "units": "V",
+                    "units": "\u00b0",
                     "varType": "float",
-                    "currentValue": "$tag.app().external_v:number:null",
-                    "decPrecision": 2
+                    "currentValue": "$tag.app().heading_deg:number:null",
+                    "decPrecision": 0
                 },
                 "analog_input": {
                     "name": "analog_input",
@@ -903,24 +1022,12 @@
                     "currentValue": "$tag.app().analog_input_v:number:null",
                     "decPrecision": 3
                 },
-                "temperature": {
-                    "name": "temperature",
-                    "type": "uiVariable",
-                    "displayString": "Temperature",
-                    "showActivity": true,
-                    "position": 61,
-                    "hidden": false,
-                    "units": "\u00b0C",
-                    "varType": "float",
-                    "currentValue": "$tag.app().temperature_c:number:null",
-                    "decPrecision": 0
-                },
                 "digital_input_1": {
                     "name": "digital_input_1",
                     "type": "uiVariable",
                     "displayString": "Digital Input 1",
                     "showActivity": true,
-                    "position": 62,
+                    "position": 61,
                     "hidden": false,
                     "varType": "bool",
                     "currentValue": "$tag.app().digital_input_1:boolean:null"
@@ -930,7 +1037,7 @@
                     "type": "uiVariable",
                     "displayString": "Digital Input 2",
                     "showActivity": true,
-                    "position": 63,
+                    "position": 62,
                     "hidden": false,
                     "varType": "bool",
                     "currentValue": "$tag.app().digital_input_2:boolean:null"
@@ -940,34 +1047,40 @@
                     "type": "uiVariable",
                     "displayString": "Digital Output",
                     "showActivity": true,
-                    "position": 64,
+                    "position": 63,
                     "hidden": false,
                     "varType": "bool",
                     "currentValue": "$tag.app().digital_output:boolean:null"
                 },
-                "runtime": {
-                    "name": "runtime",
+                "external_power": {
+                    "name": "external_power",
                     "type": "uiVariable",
-                    "displayString": "Runtime",
+                    "displayString": "External Power",
+                    "showActivity": true,
+                    "position": 64,
+                    "hidden": false,
+                    "varType": "bool",
+                    "currentValue": "$tag.app().ext_power_good:boolean:null"
+                },
+                "gps_fix_current": {
+                    "name": "gps_fix_current",
+                    "type": "uiVariable",
+                    "displayString": "GPS Fix Current",
                     "showActivity": true,
                     "position": 65,
                     "hidden": false,
-                    "units": "s",
-                    "varType": "float",
-                    "currentValue": "$tag.app().runtime_s:number:null",
-                    "decPrecision": 0
+                    "varType": "bool",
+                    "currentValue": "$tag.app().gps_current:boolean:null"
                 },
-                "odometer": {
-                    "name": "odometer",
+                "trip_type": {
+                    "name": "trip_type",
                     "type": "uiVariable",
-                    "displayString": "Odometer",
+                    "displayString": "Trip Type",
                     "showActivity": true,
                     "position": 66,
                     "hidden": false,
-                    "units": "km",
-                    "varType": "float",
-                    "currentValue": "$tag.app().odometer_km:number:null",
-                    "decPrecision": 2
+                    "varType": "string",
+                    "currentValue": "$tag.app().trip_type:string:null"
                 }
             }
         },
