@@ -12,13 +12,15 @@ dependencies = [
 export-config-integration = "integration.app_config:export"
 export-config-processor = "processor.app_config:export"
 export-ui-processor = "processor.app_ui:export"
+export-config-g62 = "g62.app_config:export"
+export-ui-g62 = "g62.app_ui:export"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/integration", "src/processor"]
+packages = ["src/integration", "src/processor", "src/g62"]
 
 [dependency-groups]
 dev = [
