@@ -5,7 +5,7 @@ from pydoover.processor import ManySubscriptionConfig, SerialNumberConfig
 
 
 class DigitalMatterProcessorConfig(config.Schema):
-    subscription = ManySubscriptionConfig()
+    subscription = ManySubscriptionConfig(default=["on_dm_event"])
     position = config.ApplicationPosition()
     serial_number = SerialNumberConfig(
         description="Digital Matter Serial Number",

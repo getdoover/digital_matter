@@ -203,10 +203,17 @@ class DigitalMatterIntegration(Application):
                 raise_key_error=True,
             )
         except KeyError:
-            log.info(
-                f"Serial numbers not found. Tags: {self.tag_manager._tag_values}. Skipping..."
-            )
-            return
+            try:
+                device_mapping = self.tag_manager.get_tag(
+                    "serial_number_lookup",
+                    app_key="digital_matter_processor_1",
+                    raise_key_error=True,
+                )
+            except KeyError:
+                log.info(
+                    f"Serial numbers not found. Tags: {self.tag_manager._tag_values}. Skipping..."
+                )
+                return
 
         agent_id = device_mapping.get(str(serial_number))
 

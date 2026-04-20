@@ -269,9 +269,15 @@
                     "title": "Subscription",
                     "x-name": "dv_proc_subscriptions",
                     "x-hidden": false,
-                    "type": "array",
-                    "x-required": true,
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "x-required": false,
                     "description": "A list of channels to subscribe to.",
+                    "default": [
+                        "on_dm_event"
+                    ],
                     "x-position": 0,
                     "items": {
                         "title": "Channel Subscription",
@@ -347,7 +353,6 @@
             },
             "additionalElements": true,
             "required": [
-                "dv_proc_subscriptions",
                 "dv_serial_number"
             ]
         },
