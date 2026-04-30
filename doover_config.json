@@ -232,7 +232,21 @@
         "image_name": null,
         "banner_url": null,
         "staging_config": {
-            "id": "156563631524299528"
+            "id": "156563631524299528",
+            "lambda_config": {
+                "Environment": {
+                    "Variables": {
+                        "DOOVER_DATA_ENDPOINT": "https://data.staging.udoover.com/api"
+                    }
+                },
+                "Runtime": "python3.13",
+                "Timeout": 60,
+                "Handler": "src.integration.handler",
+                "MemorySize": 128,
+                "Architectures": [
+                    "arm64"
+                ]
+            }
         },
         "run_command": null,
         "lambda_arn": null
@@ -379,7 +393,21 @@
         "image_name": null,
         "banner_url": null,
         "staging_config": {
-            "id": "156563568559407877"
+            "id": "156563568559407877",
+            "lambda_config": {
+                "Environment": {
+                    "Variables": {
+                        "DOOVER_DATA_ENDPOINT": "https://data.staging.udoover.com/api"
+                    }
+                },
+                "Runtime": "python3.13",
+                "Timeout": 60,
+                "Handler": "src.processor.handler",
+                "MemorySize": 128,
+                "Architectures": [
+                    "arm64"
+                ]
+            }
         },
         "run_command": null,
         "lambda_arn": null,
