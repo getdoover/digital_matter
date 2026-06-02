@@ -14,3 +14,5 @@ class DigitalMatterTags(Tags):
     device_temp = Tag("number", default=None)
     uplink_reason = Tag("string", default=None)
     device_time = Tag("string", default=None)
+
+    sim_iccid = Tag("string", default=None)

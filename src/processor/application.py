@@ -11,6 +11,8 @@ from .app_ui import DigitalMatterUI
 
 log = logging.getLogger(__name__)
 
+HARDWARE_CHANNEL = "dv-hardware"
+
 
 class DigitalMatterProcessor(Application):
     config_cls = DigitalMatterProcessorConfig
@@ -33,6 +35,9 @@ class DigitalMatterProcessor(Application):
 
         data = event.message.data
         log.info(f"Processing Digital Matter event: {data}")
+
+        if data.get("sim_iccid"):
+            await self._update_hardware_iccid(data["sim_iccid"])
 
         odometer_offset = self.config.odometer_offset_km.value
         run_hours_offset = self.config.run_hours_offset.value
@@ -85,3 +90,24 @@ class DigitalMatterProcessor(Application):
             connection_status=ConnectionStatus.periodic_unknown,
             offline_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
+
+    async def _update_hardware_iccid(self, iccid: str):
+        """Publish the SIM ICCID to the dv-hardware channel like host_configurator.
+
+        Only republishes when the ICCID changes, so a stable SIM doesn't spam
+        the channel on every uplink. host_configurator writes both a message
+        (historical record) and the channel aggregate (latest, queryable
+        without scanning messages); we do the same with the single field we
+        know about, merging into the aggregate so any other hardware fields are
+        preserved.
+        """
+        if self.tags.sim_iccid.value == iccid:
+            return
+
+        log.info(f"Publishing SIM ICCID {iccid} to {HARDWARE_CHANNEL}")
+        # Match host_configurator's snapshot shape: the SIM ICCID lives under
+        # the top-level "modem" key as sim_iccid.
+        snapshot = {"modem": {"sim_iccid": iccid}}
+        await self.api.create_message(HARDWARE_CHANNEL, snapshot)
+        await self.api.update_channel_aggregate(HARDWARE_CHANNEL, snapshot)
+        await self.tags.sim_iccid.set(iccid)

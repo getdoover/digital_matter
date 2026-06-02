@@ -1,6 +1,8 @@
 import base64
 import json
 import logging
+import re
+from urllib.parse import urlsplit, parse_qs
 
 from pydoover.processor import Application
 from pydoover.models import IngestionEndpointEvent
@@ -8,6 +10,39 @@ from pydoover.models import IngestionEndpointEvent
 from .app_config import DigitalMatterIntegrationConfig
 
 log = logging.getLogger(__name__)
+
+ICCID_RE = re.compile(r"^89\d{16,20}$")
+
+
+def extract_iccid(invocation_url: str | None) -> str | None:
+    """Pull the SIM ICCID out of the connector invocation URL, if present.
+
+    Tolerant of however the connector is configured to template it: an
+    ``?iccid=...`` query parameter (any case) is preferred, otherwise we scan
+    the path segments and query values for anything that looks like an ICCID
+    (e.g. a URL templated as ``.../ingest/[ICCID]``). Returns None if no valid
+    ICCID is found, i.e. the device has no SIM populated against it.
+    """
+    if not invocation_url:
+        return None
+
+    parts = urlsplit(invocation_url)
+
+    query = parse_qs(parts.query)
+    for key, values in query.items():
+        if key.lower() == "iccid":
+            for value in values:
+                if ICCID_RE.match(value.strip()):
+                    return value.strip()
+
+    candidates = parts.path.split("/")
+    candidates += [v for values in query.values() for v in values]
+    for candidate in candidates:
+        candidate = candidate.strip()
+        if ICCID_RE.match(candidate):
+            return candidate
+
+    return None
 
 # Digital Matter uplink reason codes
 UPLINK_REASONS = {
@@ -189,6 +224,10 @@ class DigitalMatterIntegration(Application):
 
         log.info(f"Received Digital Matter event: {payload}")
 
+        iccid = extract_iccid(event.invocation_url)
+        if iccid:
+            log.info(f"Extracted SIM ICCID {iccid} from {event.invocation_url}")
+
         # Extract serial number - this identifies the device
         serial_number = payload.get("SerNo")
         if not serial_number:
@@ -226,6 +265,8 @@ class DigitalMatterIntegration(Application):
         for record in records:
             parsed = parse_dm_record(record)
             parsed["serial_number"] = serial_number
+            if iccid:
+                parsed["sim_iccid"] = iccid
 
             # Store the raw event on this integration's agent
             await self.api.create_message("dm_events", parsed)
