@@ -238,14 +238,14 @@ class DigitalMatterIntegration(Application):
         try:
             device_mapping = self.tag_manager.get_tag(
                 "serial_number_lookup",
-                app_key="digital_matter_processor-1",
+                app_key="digital_matter_processor_1",
                 raise_key_error=True,
             )
         except KeyError:
             try:
                 device_mapping = self.tag_manager.get_tag(
                     "serial_number_lookup",
-                    app_key="digital_matter_processor_1",
+                    app_key="digital_matter_processor-1",
                     raise_key_error=True,
                 )
             except KeyError:
