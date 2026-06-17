@@ -293,6 +293,7 @@
                         "on_dm_event"
                     ],
                     "x-position": 0,
+                    "x-advanced": true,
                     "items": {
                         "title": "Channel Subscription",
                         "x-name": "dv_proc_subscription",
