@@ -12,6 +12,7 @@ class DigitalMatterTags(Tags):
     battery_voltage = Tag("number", default=None)
     signal_strength = Tag("number", default=None)
     device_temp = Tag("number", default=None)
+    analog_input_v = Tag("number", default=None)
     uplink_reason = Tag("string", default=None)
     device_time = Tag("string", default=None)
 

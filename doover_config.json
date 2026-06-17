@@ -693,12 +693,24 @@
                         }
                     ]
                 },
+                "analog_input": {
+                    "name": "analog_input",
+                    "type": "uiVariable",
+                    "displayString": "Analog Input",
+                    "showActivity": true,
+                    "position": 60,
+                    "hidden": false,
+                    "units": "V",
+                    "varType": "float",
+                    "currentValue": "$tag.app().analog_input_v:number:null",
+                    "decPrecision": 3
+                },
                 "last_uplink_reason": {
                     "name": "last_uplink_reason",
                     "type": "uiVariable",
                     "displayString": "Last Uplink Reason",
                     "showActivity": true,
-                    "position": 60,
+                    "position": 61,
                     "hidden": false,
                     "varType": "string",
                     "currentValue": "$tag.app().uplink_reason:string:null"
@@ -708,7 +720,7 @@
                     "type": "uiVariable",
                     "displayString": "Device Time (UTC)",
                     "showActivity": true,
-                    "position": 61,
+                    "position": 62,
                     "hidden": false,
                     "varType": "time",
                     "currentValue": "$tag.app().device_time:string:null"

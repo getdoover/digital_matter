@@ -110,6 +110,14 @@ class DigitalMatterUI(ui.UI, hidden="$config.app().hide_ui"):
         ],
     )
 
+    # External analog input (G70 yellow wire, mapped to "Analog 5" on the device)
+    analog_input = ui.NumericVariable(
+        "Analog Input",
+        value=DigitalMatterTags.analog_input_v,
+        units="V",
+        precision=3,
+    )
+
     # Last uplink reason
     uplink_reason = ui.TextVariable(
         "Last Uplink Reason",

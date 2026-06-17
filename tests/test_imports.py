@@ -52,7 +52,7 @@ def test_parse_dm_record():
         "Fields": [
             {"FType": 0, "Lat": -33.8688, "Long": 151.2093, "Alt": 50, "Spd": 1500, "PosAcc": 5},
             {"FType": 2, "DIn": 1},
-            {"FType": 6, "AnalogueData": {"1": 3800, "2": 1350, "3": 2500, "4": 20}},
+            {"FType": 6, "AnalogueData": {"1": 3800, "2": 1350, "3": 2500, "4": 20, "5": 12340}},
             {"FType": 27, "Odo": 10000000, "RH": 360000},
         ],
     }
@@ -78,6 +78,7 @@ def test_parse_dm_record():
     assert parsed["system_voltage"] == 13.5
     assert parsed["device_temp_c"] == 25.0
     assert parsed["signal_strength_percent"] == round(20 * (100 / 31))
+    assert parsed["analog_input_v"] == 12.34
 
     # Odometer and run hours
     assert parsed["odometer_km"] == 100.0

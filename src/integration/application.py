@@ -112,7 +112,7 @@ def parse_dm_record(record: dict) -> dict:
     Digital Matter sends records with various field types (FType):
     - FType 0: GPS position data
     - FType 2: Digital inputs
-    - FType 6: Analogue data (voltages, temperature, signal strength)
+    - FType 6: Analogue data (voltages, temperature, signal strength, external analog input)
     - FType 27: Odometer and run hours
     """
     result = {
@@ -169,6 +169,11 @@ def parse_dm_record(record: dict) -> dict:
             # Field 4: Signal strength (0-31 scale)
             if "4" in analogue:
                 result["signal_strength_percent"] = round(analogue["4"] * (100 / 31))
+            # Field 5: External analogue input (mV) - the physical analog input
+            # wire (e.g. G70 yellow wire, 0-40V). Mapped to "Analog 5" in the
+            # Digital Matter device config.
+            if "5" in analogue:
+                result["analog_input_v"] = analogue["5"] / 1000
 
         elif ftype == 27:
             # Odometer and run hours

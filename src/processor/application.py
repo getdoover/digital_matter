@@ -70,6 +70,9 @@ class DigitalMatterProcessor(Application):
         if "device_temp_c" in data:
             await self.tags.device_temp.set(data["device_temp_c"])
 
+        if "analog_input_v" in data:
+            await self.tags.analog_input_v.set(data["analog_input_v"])
+
         if "uplink_reason" in data:
             await self.tags.uplink_reason.set(data["uplink_reason"])
 
