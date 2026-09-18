@@ -1144,7 +1144,7 @@
             }
         },
         "build_args": null,
-        "icon_url": null,
+        "icon_url": "https://cdn.jsdelivr.net/gh/getdoover/app-icons@f6ca20eca2c2d1e05184cb06bf6fee951bba40e7/icons/digital-matter.png",
         "staging_config": {
             "lambda_config": {
                 "Environment": {
