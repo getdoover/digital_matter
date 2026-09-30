@@ -1,7 +1,11 @@
 from pydoover.tags import Tag, Tags
 
+from .app_config import DigitalMatterProcessorConfig, analogue_tag_name
+
 
 class DigitalMatterTags(Tags):
+    config: DigitalMatterProcessorConfig
+
     run_hours = Tag("number", default=None)
     odometer_km = Tag("number", default=None)
 
@@ -17,3 +21,12 @@ class DigitalMatterTags(Tags):
     device_time = Tag("string", default=None)
 
     sim_iccid = Tag("string", default=None)
+
+    async def setup(self):
+        # One scaled-value tag per configured analogue input (general devices).
+        if self.config is None or self.config.is_vehicle_tracker:
+            return
+        # A slot listed twice shares one tag rather than failing setup.
+        numbers = {i.analogue_number.value for i in self.config.analogue_inputs.elements}
+        for number in sorted(numbers):
+            self.add_tag(analogue_tag_name(number), Tag("number", default=None))

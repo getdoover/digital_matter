@@ -113,6 +113,7 @@ def parse_dm_record(record: dict) -> dict:
     - FType 0: GPS position data
     - FType 2: Digital inputs
     - FType 6: Analogue data (voltages, temperature, signal strength, external analog input)
+    - FType 7: 32-bit analogue data (Hawk analogs configured as Int32)
     - FType 27: Odometer and run hours
     """
     result = {
@@ -154,9 +155,12 @@ def parse_dm_record(record: dict) -> dict:
             result["digital_input_2"] = bool(din & 0b010)
             result["digital_input_3"] = bool(din & 0b100)
 
-        elif ftype == 6:
-            # Analogue data
+        elif ftype in (6, 7):
+            # Analogue data. Int16 analogs arrive in FType 6, Int32 in FType 7.
             analogue = field.get("AnalogueData", {})
+            # Forward every slot untouched so the processor can scale whichever
+            # ones are configured as sensor inputs (e.g. Hawk 4-20mA).
+            result.setdefault("analogue_raw", {}).update(analogue)
             # Field 1: Internal battery voltage (mV)
             if "1" in analogue:
                 result["battery_voltage"] = analogue["1"] / 1000
@@ -177,7 +181,7 @@ def parse_dm_record(record: dict) -> dict:
 
         elif ftype == 27:
             # Odometer and run hours
-            # Odometer in m, convert to km
+            # Odometer in 0.01 km, convert to km
             if "Odo" in field:
                 result["odometer_km"] = field["Odo"] / 100
             # Run hours in seconds, convert to hours

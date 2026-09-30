@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 from pydoover.processor import Application
 from pydoover.models import MessageCreateEvent, ConnectionStatus
 
-from .app_config import DigitalMatterProcessorConfig
+from .app_config import DigitalMatterProcessorConfig, analogue_tag_name
 from .app_tags import DigitalMatterTags
 from .app_ui import DigitalMatterUI
 
@@ -39,25 +39,12 @@ class DigitalMatterProcessor(Application):
         if data.get("sim_iccid"):
             await self._update_hardware_iccid(data["sim_iccid"])
 
-        odometer_offset = self.config.odometer_offset_km.value
-        run_hours_offset = self.config.run_hours_offset.value
+        if self.config.is_vehicle_tracker:
+            await self._update_vehicle_tags(data)
+        else:
+            await self._update_analogue_inputs(data.get("analogue_raw", {}))
 
         # Update tags with telemetry data (UI is bound to these via tag_ref)
-        if "speed_kmh" in data:
-            await self.tags.speed.set(data["speed_kmh"])
-
-        if "gps_accuracy_m" in data:
-            await self.tags.gps_accuracy.set(data["gps_accuracy_m"])
-
-        if "ignition_on" in data:
-            await self.tags.ignition_on.set(data["ignition_on"])
-
-        if "run_hours" in data:
-            await self.tags.run_hours.set(data["run_hours"] + run_hours_offset)
-
-        if "odometer_km" in data:
-            await self.tags.odometer_km.set(data["odometer_km"] + odometer_offset)
-
         if "system_voltage" in data:
             await self.tags.system_voltage.set(data["system_voltage"])
 
@@ -69,9 +56,6 @@ class DigitalMatterProcessor(Application):
 
         if "device_temp_c" in data:
             await self.tags.device_temp.set(data["device_temp_c"])
-
-        if "analog_input_v" in data:
-            await self.tags.analog_input_v.set(data["analog_input_v"])
 
         if "uplink_reason" in data:
             await self.tags.uplink_reason.set(data["uplink_reason"])
@@ -93,6 +77,37 @@ class DigitalMatterProcessor(Application):
             connection_status=ConnectionStatus.periodic_unknown,
             offline_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
+
+    async def _update_vehicle_tags(self, data: dict):
+        odometer_offset = self.config.odometer_offset_km.value
+        run_hours_offset = self.config.run_hours_offset.value
+
+        if "speed_kmh" in data:
+            await self.tags.speed.set(data["speed_kmh"])
+
+        if "gps_accuracy_m" in data:
+            await self.tags.gps_accuracy.set(data["gps_accuracy_m"])
+
+        if "ignition_on" in data:
+            await self.tags.ignition_on.set(data["ignition_on"])
+
+        if "run_hours" in data:
+            await self.tags.run_hours.set(data["run_hours"] + run_hours_offset)
+
+        if "odometer_km" in data:
+            await self.tags.odometer_km.set(data["odometer_km"] + odometer_offset)
+
+        if "analog_input_v" in data:
+            await self.tags.analog_input_v.set(data["analog_input_v"])
+
+    async def _update_analogue_inputs(self, analogue_raw: dict):
+        """Scale each configured analogue slot (e.g. Hawk 4-20mA) into its tag."""
+        for analogue_input in self.config.analogue_inputs.elements:
+            number = analogue_input.analogue_number.value
+            raw = analogue_raw.get(str(number))
+            if raw is None:
+                continue
+            await self.tags.get_tag(analogue_tag_name(number)).set(analogue_input.scale(raw))
 
     async def _update_hardware_iccid(self, iccid: str):
         """Publish the SIM ICCID to the dv-hardware channel like host_configurator.

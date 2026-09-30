@@ -2,7 +2,11 @@ from pathlib import Path
 
 from pydoover import ui
 
+from .app_config import analogue_tag_name
 from .app_tags import DigitalMatterTags
+
+# Elements that only make sense on a vehicle tracker.
+VEHICLE_ELEMENTS = ("speed", "gps_accuracy", "ignition_on", "run_hours", "odometer", "analog_input")
 
 
 class DigitalMatterUI(ui.UI, hidden="$config.app().hide_ui"):
@@ -129,6 +133,26 @@ class DigitalMatterUI(ui.UI, hidden="$config.app().hide_ui"):
         "Device Time (UTC)",
         value=DigitalMatterTags.device_time,
     )
+
+    async def setup(self):
+        if self.config is None or self.config.is_vehicle_tracker:
+            return
+
+        for name in VEHICLE_ELEMENTS:
+            self.remove_element(name)
+
+        for position, analogue_input in enumerate(self.config.analogue_inputs.elements):
+            number = analogue_input.analogue_number.value
+            self.add_element(
+                ui.NumericVariable(
+                    analogue_input.name.value,
+                    name=f"analogue_input_{position}",
+                    value=self.tags.get_tag(analogue_tag_name(number)),
+                    units=analogue_input.units.value,
+                    precision=analogue_input.precision.value,
+                    position=position,
+                )
+            )
 
 
 def export():

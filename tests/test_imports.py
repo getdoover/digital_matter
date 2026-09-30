@@ -18,22 +18,20 @@ def test_import_processor():
 def test_integration_config():
     from integration.app_config import DigitalMatterIntegrationConfig
 
-    config = DigitalMatterIntegrationConfig()
-    assert isinstance(config.to_dict(), dict)
+    assert isinstance(DigitalMatterIntegrationConfig.to_schema(), dict)
 
 
 def test_processor_config():
     from processor.app_config import DigitalMatterProcessorConfig
 
-    config = DigitalMatterProcessorConfig()
-    assert isinstance(config.to_dict(), dict)
+    assert isinstance(DigitalMatterProcessorConfig.to_schema(), dict)
 
 
 def test_processor_ui():
     from processor.app_ui import DigitalMatterUI
 
-    ui = DigitalMatterUI()
-    assert ui.fetch()
+    ui = DigitalMatterUI(None, None, None)
+    assert ui.to_schema()
 
 
 def test_parse_dm_record():
@@ -53,7 +51,7 @@ def test_parse_dm_record():
             {"FType": 0, "Lat": -33.8688, "Long": 151.2093, "Alt": 50, "Spd": 1500, "PosAcc": 5},
             {"FType": 2, "DIn": 1},
             {"FType": 6, "AnalogueData": {"1": 3800, "2": 1350, "3": 2500, "4": 20, "5": 12340}},
-            {"FType": 27, "Odo": 10000000, "RH": 360000},
+            {"FType": 27, "Odo": 10000, "RH": 360000},
         ],
     }
 
