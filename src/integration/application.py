@@ -105,6 +105,15 @@ def get_uplink_reason(code: int) -> str:
     return UPLINK_REASONS.get(code, f"Unknown ({code})")
 
 
+def decode_bits(value: int, min_bits: int = 8) -> dict[str, bool]:
+    """Expand a DM bitmask (e.g. DIn/DOut) into {"<bit>": bool}.
+
+    Always covers at least ``min_bits`` so downstream apps see a stable set of
+    keys, and extends past that if a higher bit is set.
+    """
+    return {str(i): bool(value >> i & 1) for i in range(max(min_bits, value.bit_length()))}
+
+
 def parse_dm_record(record: dict) -> dict:
     """
     Parse a single Digital Matter record into a normalized format.
@@ -115,6 +124,10 @@ def parse_dm_record(record: dict) -> dict:
     - FType 6: Analogue data (voltages, temperature, signal strength, external analog input)
     - FType 7: 32-bit analogue data (Hawk analogs configured as Int32)
     - FType 27: Odometer and run hours
+
+    Every field is also forwarded untouched under ``fields``, keyed by FType, so
+    inputs we don't decode (Modbus, SDI-12, etc.) can still be picked up
+    downstream, e.g. ``$on_dm_event.fields.<FType>.0.<key>``.
     """
     result = {
         "uplink_reason": get_uplink_reason(record.get("Reason", 0)),
@@ -127,6 +140,7 @@ def parse_dm_record(record: dict) -> dict:
 
     for field in fields:
         ftype = field.get("FType")
+        result.setdefault("fields", {}).setdefault(str(ftype), []).append(field)
 
         if ftype == 0:
             # GPS position data
@@ -154,12 +168,14 @@ def parse_dm_record(record: dict) -> dict:
             result["ignition_on"] = bool(din & 0b001)
             result["digital_input_2"] = bool(din & 0b010)
             result["digital_input_3"] = bool(din & 0b100)
+            result["digital_inputs"] = decode_bits(din)
+            result["digital_outputs"] = decode_bits(field.get("DOut", 0))
 
         elif ftype in (6, 7):
             # Analogue data. Int16 analogs arrive in FType 6, Int32 in FType 7.
             analogue = field.get("AnalogueData", {})
-            # Forward every slot untouched so the processor can scale whichever
-            # ones are configured as sensor inputs (e.g. Hawk 4-20mA).
+            # Forward every slot untouched so the processor can pick up whichever
+            # sensor inputs are wired in (e.g. Hawk 4-20mA).
             result.setdefault("analogue_raw", {}).update(analogue)
             # Field 1: Internal battery voltage (mV)
             if "1" in analogue:
@@ -235,10 +251,7 @@ class DigitalMatterIntegration(Application):
 
         # Store the untouched payload on this integration's agent before any
         # early return, so unmapped or malformed uplinks can still be debugged
-        await self.api.create_message(
-            "dm_events",
-            {"invocation_url": event.invocation_url, "payload": payload},
-        )
+        await self.api.create_message("dm_events", payload)
 
         iccid = extract_iccid(event.invocation_url)
         if iccid:

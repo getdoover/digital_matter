@@ -5,8 +5,13 @@ from pydoover.processor import Application
 from pydoover.models import MessageCreateEvent, ConnectionStatus
 from pydoover.tags import LogMode
 
-from .app_config import DigitalMatterProcessorConfig, analogue_tag_name
-from .app_tags import DigitalMatterTags
+from .app_config import DigitalMatterProcessorConfig
+from .app_tags import (
+    DigitalMatterTags,
+    analogue_tag_name,
+    detect_inputs,
+    digital_tag_name,
+)
 from .app_ui import DigitalMatterUI
 
 
@@ -48,7 +53,7 @@ class DigitalMatterProcessor(Application):
         if self.config.is_vehicle_tracker:
             await self._update_vehicle_tags(data)
         else:
-            await self._update_analogue_inputs(data.get("analogue_raw", {}))
+            await self._update_inputs(data)
 
         # Update tags with telemetry data (UI is bound to these via tag_ref)
         if "system_voltage" in data:
@@ -106,14 +111,30 @@ class DigitalMatterProcessor(Application):
         if "analog_input_v" in data:
             await self.tags.analog_input_v.set(data["analog_input_v"])
 
-    async def _update_analogue_inputs(self, analogue_raw: dict):
-        """Scale each configured analogue slot (e.g. Hawk 4-20mA) into its tag."""
-        for analogue_input in self.config.analogue_inputs.elements:
-            number = analogue_input.analogue_number.value
-            raw = analogue_raw.get(str(number))
-            if raw is None:
-                continue
-            await self.tags.get_tag(analogue_tag_name(number)).set(analogue_input.scale(raw))
+    async def _update_inputs(self, data: dict):
+        """Report every sensor input the device sends, adding UI for new ones."""
+        known = self.tags.detected_inputs.value or {}
+        found = detect_inputs(data)
+        detected = {
+            kind: sorted(set(known.get(kind, [])) | set(numbers))
+            for kind, numbers in found.items()
+        }
+
+        if detected != known:
+            log.info(f"Detected new inputs: {detected} (was {known})")
+            self.tags.add_input_tags(detected)
+            self.ui.add_input_elements(detected)
+            await self.tags.detected_inputs.set(detected)
+            await self.publish_ui_schema()
+
+        analogue_raw = data.get("analogue_raw", {})
+        for number in found["analogue"]:
+            await self.tags.get_tag(analogue_tag_name(number)).set(analogue_raw[str(number)])
+
+        digital_inputs = data.get("digital_inputs", {})
+        for number in detected["digital"]:
+            if str(number) in digital_inputs:
+                await self.tags.get_tag(digital_tag_name(number)).set(digital_inputs[str(number)])
 
     async def _update_hardware_iccid(self, iccid: str):
         """Publish the SIM ICCID to the dv-hardware channel like host_configurator.
