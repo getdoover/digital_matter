@@ -66,7 +66,7 @@ class AnalogueInputConfig(config.Object):
 class DigitalMatterProcessorConfig(config.Schema):
     subscription = ManySubscriptionConfig(default=["on_dm_event"], advanced=True)
     position = config.ApplicationPosition()
-    default_open = config.ApplicationDefaultOpen()
+    default_open = config.ApplicationDefaultOpen(default=True)
 
     serial_number = SerialNumberConfig(
         description="Digital Matter Serial Number",
@@ -106,6 +106,7 @@ class DigitalMatterProcessorConfig(config.Schema):
         "Hide Default UI",
         description="Whether to hide the default UI. Useful if you have a custom UI application.",
         default=False,
+        advanced=True,
     )
 
     @property

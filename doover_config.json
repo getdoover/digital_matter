@@ -1,6 +1,5 @@
 {
     "digital_matter_integration": {
-        "id": "144762049098989572",
         "name": "digital_matter_integration",
         "display_name": "Digital Matter Integration",
         "type": "INT",
@@ -22,13 +21,9 @@
             "Architectures": [
                 "arm64"
             ]
-        },
-        "staging_config": {
-            "id": "156563631524299528"
         }
     },
     "digital_matter_processor": {
-        "id": "144762160331931663",
         "name": "digital_matter_processor",
         "display_name": "Digital Matter Device",
         "type": "PRO",
@@ -50,13 +45,9 @@
             "Architectures": [
                 "arm64"
             ]
-        },
-        "staging_config": {
-            "id": "156563568559407877"
         }
     },
     "g62_processor": {
-        "id": 169313078524009223,
         "name": "g62_processor",
         "display_name": "G62 LoRaWAN Vehicle Tracker",
         "type": "PRO",
@@ -64,7 +55,6 @@
         "allow_many": false,
         "description": "Processor for G62 LoRaWAN devices",
         "long_description": "README.md",
-        "icon_url": "https://cdn.jsdelivr.net/gh/getdoover/app-icons@f6ca20eca2c2d1e05184cb06bf6fee951bba40e7/icons/digital-matter.png",
         "depends_on": [],
         "organisation_id": null,
         "export_config_command": "export-config-g62",
@@ -78,9 +68,6 @@
             "Architectures": [
                 "arm64"
             ]
-        },
-        "staging_config": {
-            "id": 169300255068661510
         }
     }
 }

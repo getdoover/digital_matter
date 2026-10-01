@@ -233,6 +233,13 @@ class DigitalMatterIntegration(Application):
 
         log.info(f"Received Digital Matter event: {payload}")
 
+        # Store the untouched payload on this integration's agent before any
+        # early return, so unmapped or malformed uplinks can still be debugged
+        await self.api.create_message(
+            "dm_events",
+            {"invocation_url": event.invocation_url, "payload": payload},
+        )
+
         iccid = extract_iccid(event.invocation_url)
         if iccid:
             log.info(f"Extracted SIM ICCID {iccid} from {event.invocation_url}")
@@ -276,9 +283,6 @@ class DigitalMatterIntegration(Application):
             parsed["serial_number"] = serial_number
             if iccid:
                 parsed["sim_iccid"] = iccid
-
-            # Store the raw event on this integration's agent
-            await self.api.create_message("dm_events", parsed)
 
             # Forward to the device agent if we have a mapping
             if agent_id:

@@ -59,7 +59,8 @@ def test_general_swaps_ui():
     names = set(ui._elements)
     assert not names & set(VEHICLE_ELEMENTS)
     assert "analogue_input_0" in names
-    assert "battery_voltage" in names
+    assert "battery_voltage" in ui.details._children
+    assert "gps_accuracy" not in ui.details._children
     assert ui.analogue_input_0.display_name == "Tank Level"
 
 

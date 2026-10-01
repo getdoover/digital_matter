@@ -3,6 +3,7 @@ from datetime import datetime, timezone, timedelta
 
 from pydoover.processor import Application
 from pydoover.models import MessageCreateEvent, ConnectionStatus
+from pydoover.tags import LogMode
 
 from .app_config import DigitalMatterProcessorConfig, analogue_tag_name
 from .app_tags import DigitalMatterTags
@@ -22,6 +23,11 @@ class DigitalMatterProcessor(Application):
     config: DigitalMatterProcessorConfig
     tags: DigitalMatterTags
     ui: DigitalMatterUI
+
+    async def setup(self):
+        # Log every value each uplink reports, even when unchanged, so a steady
+        # reading (e.g. a dam level that hasn't moved) still shows in history.
+        self.tag_manager.log_mode = LogMode.ONLY_SET
 
     async def on_message_create(self, event: MessageCreateEvent):
         """
