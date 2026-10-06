@@ -47,6 +47,43 @@ def test_fast_updates_override_the_read_schedule():
     task = app._desired_sections(HAWK_PRODUCT_ID)[TASK_1]
     assert (task["iEventPeriod"], task["bUploadMultiplier"]) == ("240", "4")
 
-    app._fast_updates_until = lambda: datetime.now(timezone.utc) + timedelta(minutes=30)
+    app._fast_updates_active = lambda: True
     task = app._desired_sections(HAWK_PRODUCT_ID)[TASK_1]
     assert (task["iEventPeriod"], task["bUploadMultiplier"]) == (str(FAST_UPDATE_MINS), "1")
+
+
+class FakeTag:
+    def __init__(self, value=None):
+        self.value = value
+
+    async def set(self, value):
+        self.value = value
+
+
+def test_burst_timer_starts_at_the_next_uplink():
+    app = make_app(**MANAGED_HAWK)
+    app.tags = type("Tags", (), {"fast_updates_pending": FakeTag(True), "fast_updates_until": FakeTag()})()
+    pushes = []
+
+    async def push():
+        pushes.append(app._fast_updates_active())
+        return True
+
+    app._push_device_config = push
+
+    # The uplink after the press starts the 30 minutes.
+    asyncio.run(app._update_fast_updates())
+    assert app.tags.fast_updates_pending.value is False
+    until = app._fast_updates_until()
+    assert timedelta(minutes=29) < until - datetime.now(timezone.utc) <= timedelta(minutes=30)
+    assert pushes == []
+
+    # Mid-burst uplinks change nothing.
+    asyncio.run(app._update_fast_updates())
+    assert app._fast_updates_until() == until and pushes == []
+
+    # Once it's over, the normal schedule is pushed.
+    app.tags.fast_updates_until.value = int((datetime.now(timezone.utc) - timedelta(seconds=1)).timestamp() * 1000)
+    asyncio.run(app._update_fast_updates())
+    assert app.tags.fast_updates_until.value is None
+    assert pushes == [False]

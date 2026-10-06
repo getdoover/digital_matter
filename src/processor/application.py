@@ -68,23 +68,38 @@ class DigitalMatterProcessor(Application):
         if self.config.is_vehicle_tracker or not self.config.manage_device_config.value:
             return
 
-        until = datetime.now(timezone.utc) + FAST_UPDATE_DURATION
-        log.info(f"Fast updates until {until}")
-        await self.tags.fast_updates_until.set(int(until.timestamp() * 1000))
+        # The device only picks the faster schedule up at its next uplink, so
+        # the burst's timer starts then rather than now.
+        log.info("Fast updates requested, starting at the next uplink.")
+        await self.tags.fast_updates_pending.set(True)
+        await self.tags.fast_updates_until.set(None)
         await self._push_device_config()
 
     def _fast_updates_until(self) -> datetime | None:
         until = self.tags.fast_updates_until.value
         return datetime.fromtimestamp(until / 1000, timezone.utc) if until else None
 
-    async def _end_fast_updates_if_due(self):
-        """Put the normal interval back once a Fast Updates burst is over.
+    def _fast_updates_active(self) -> bool:
+        return bool(self.tags.fast_updates_pending.value) or self._fast_updates_until() is not None
 
-        Runs on each uplink: the device is checking in every couple of minutes
-        during a burst, and picks the change up on the following check-in.
+    async def _update_fast_updates(self):
+        """Run a Fast Updates burst's timer, called on each uplink.
+
+        The uplink after the button press is when the device picks up the
+        faster schedule, so the 30 minutes start then. Once they're up, the
+        normal interval is pushed back, which the device picks up on its next
+        check-in (every couple of minutes during a burst).
         """
+        now = datetime.now(timezone.utc)
+        if self.tags.fast_updates_pending.value:
+            until = now + FAST_UPDATE_DURATION
+            log.info(f"Fast updates applied, running until {until}")
+            await self.tags.fast_updates_pending.set(False)
+            await self.tags.fast_updates_until.set(int(until.timestamp() * 1000))
+            return
+
         until = self._fast_updates_until()
-        if until is None or datetime.now(timezone.utc) < until:
+        if until is None or now < until:
             return
 
         log.info("Fast updates finished, restoring the normal interval.")
@@ -151,7 +166,7 @@ class DigitalMatterProcessor(Application):
             log.info(f"No device settings to manage for product {product_id}.")
             return {}
 
-        fast = self._fast_updates_until() is not None
+        fast = self._fast_updates_active()
         plan = build_hawk_plan(HawkSettings(
             card=c.hawk_card.value,
             read_period_mins=FAST_UPDATE_MINS if fast else c.read_period_mins.value,
@@ -236,7 +251,7 @@ class DigitalMatterProcessor(Application):
             offline_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
 
-        await self._end_fast_updates_if_due()
+        await self._update_fast_updates()
 
     async def _update_vehicle_tags(self, data: dict):
         odometer_offset = self.config.odometer_offset_km.value

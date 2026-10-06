@@ -52,6 +52,9 @@ class DigitalMatterTags(Tags):
     # Outcome of the last Device Manager config push, e.g. "Up to date".
     dm_config_status = Tag("string", default=None)
 
+    # Fast Updates was pressed and is waiting for the device to pick up the
+    # faster schedule at its next uplink, when the burst's timer starts.
+    fast_updates_pending = Tag("boolean", default=False)
     # When a Fast Updates burst ends (ms since epoch); None when not in one.
     fast_updates_until = Tag("number", default=None)
 
