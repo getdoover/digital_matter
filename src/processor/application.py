@@ -43,6 +43,10 @@ HARDWARE_CHANNEL = "dv-hardware"
 POWER_ON_READ_MINS = 2
 POWER_ON_DURATION = timedelta(minutes=30)
 
+POWER_ON_WAITING = "Waiting for device to connect"
+POWER_ON_ON = "On"
+POWER_ON_TURNING_OFF = "Turning off at next check-in"
+
 
 class DigitalMatterProcessor(Application):
     config_cls = DigitalMatterProcessorConfig
@@ -74,9 +78,13 @@ class DigitalMatterProcessor(Application):
         log.info("Power on requested, starting at the next uplink.")
         await self.tags.power_on_pending.set(True)
         await self.tags.power_on_until.set(None)
-        if not await self._push_device_config():
+        await self.tags.power_on_hidden.set(False)
+        if await self._push_device_config():
+            await self.tags.power_on_status.set(POWER_ON_WAITING)
+        else:
             # Nothing reached the device, so there's nothing to time.
             await self.tags.power_on_pending.set(False)
+            await self.tags.power_on_status.set(f"Failed: {self.tags.dm_config_status.value}")
 
     def _power_on_until(self) -> datetime | None:
         until = self.tags.power_on_until.value
@@ -99,6 +107,13 @@ class DigitalMatterProcessor(Application):
             log.info(f"Power on applied, running until {until}")
             await self.tags.power_on_pending.set(False)
             await self.tags.power_on_until.set(int(until.timestamp() * 1000))
+            await self.tags.power_on_status.set(POWER_ON_ON)
+            return
+
+        if self.tags.power_on_status.value == POWER_ON_TURNING_OFF:
+            # The device has checked in since the normal config was pushed.
+            await self.tags.power_on_status.set(None)
+            await self.tags.power_on_hidden.set(True)
             return
 
         until = self._power_on_until()
@@ -107,7 +122,9 @@ class DigitalMatterProcessor(Application):
 
         log.info("Power on finished, restoring the normal interval.")
         await self.tags.power_on_until.set(None)
-        if not await self._push_device_config():
+        if await self._push_device_config():
+            await self.tags.power_on_status.set(POWER_ON_TURNING_OFF)
+        else:
             # Try again on the next uplink.
             await self.tags.power_on_until.set(int(until.timestamp() * 1000))
 

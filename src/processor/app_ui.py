@@ -8,7 +8,7 @@ from .app_tags import DigitalMatterTags, analogue_tag_name, digital_tag_name
 VEHICLE_ELEMENTS = ("speed", "gps_accuracy", "ignition_on", "run_hours", "odometer", "analog_input")
 
 # Elements for temporarily powering a Hawk's sensors and speeding up its updates.
-POWER_ON_ELEMENTS = ("power_on", "power_on_until")
+POWER_ON_ELEMENTS = ("power_on", "power_on_status", "power_on_until")
 
 # Digital inputs sit at 60 + their number, so this keeps Power On below them.
 POWER_ON_POSITION = 100
@@ -137,10 +137,18 @@ class DigitalMatterUI(ui.UI, hidden="$config.app().hide_ui"):
         "Power On for 30 min", name="power_on", position=POWER_ON_POSITION
     )
 
+    power_on_status = ui.TextVariable(
+        "Power On Status",
+        value=DigitalMatterTags.power_on_status,
+        hidden=DigitalMatterTags.power_on_hidden,
+        position=POWER_ON_POSITION + 1,
+    )
+
     power_on_until = ui.Timestamp(
         "Power On Until",
         value=DigitalMatterTags.power_on_until,
-        position=POWER_ON_POSITION + 1,
+        hidden=DigitalMatterTags.power_on_hidden,
+        position=POWER_ON_POSITION + 2,
     )
 
     async def setup(self):

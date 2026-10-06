@@ -57,6 +57,11 @@ class DigitalMatterTags(Tags):
     power_on_pending = Tag("boolean", default=False)
     # When a Power On burst ends (ms since epoch); None when not in one.
     power_on_until = Tag("number", default=None)
+    # Where Power On is up to, e.g. "Waiting for device to connect", and
+    # whether to hide its status (it's only shown from a press until the
+    # device is back to normal).
+    power_on_status = Tag("string", default=None)
+    power_on_hidden = Tag("boolean", default=True)
 
     # Sensor inputs seen so far, {"analogue": [5, ...], "digital": [3, ...]}.
     # Drives the per-input tags and UI elements on general devices.

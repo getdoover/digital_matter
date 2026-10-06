@@ -63,7 +63,12 @@ class FakeTag:
 
 def test_burst_timer_starts_at_the_next_uplink():
     app = make_app(**MANAGED_HAWK)
-    app.tags = type("Tags", (), {"power_on_pending": FakeTag(True), "power_on_until": FakeTag()})()
+    app.tags = type("Tags", (), {
+        "power_on_pending": FakeTag(True),
+        "power_on_until": FakeTag(),
+        "power_on_status": FakeTag("Waiting for device to connect"),
+        "power_on_hidden": FakeTag(False),
+    })()
     pushes = []
 
     async def push():
@@ -75,6 +80,7 @@ def test_burst_timer_starts_at_the_next_uplink():
     # The uplink after the press starts the 30 minutes.
     asyncio.run(app._update_power_on())
     assert app.tags.power_on_pending.value is False
+    assert app.tags.power_on_status.value == "On"
     until = app._power_on_until()
     assert timedelta(minutes=29) < until - datetime.now(timezone.utc) <= timedelta(minutes=30)
     assert pushes == []
@@ -88,3 +94,10 @@ def test_burst_timer_starts_at_the_next_uplink():
     asyncio.run(app._update_power_on())
     assert app.tags.power_on_until.value is None
     assert pushes == [False]
+    assert app.tags.power_on_status.value == "Turning off at next check-in"
+    assert app.tags.power_on_hidden.value is False
+
+    # The next check-in picks up the normal config, so the status is hidden again.
+    asyncio.run(app._update_power_on())
+    assert app.tags.power_on_status.value is None
+    assert app.tags.power_on_hidden.value is True
