@@ -130,7 +130,7 @@ class DigitalMatterUI(ui.UI, hidden="$config.app().hide_ui"):
         value=DigitalMatterTags.uplink_reason,
     )
 
-    fast_updates = ui.Button("Fast Updates for 30 min")
+    fast_updates = ui.Button("Fast Updates for 30 min", name="fast_updates")
 
     fast_updates_until = ui.Timestamp(
         "Fast Updates Until",

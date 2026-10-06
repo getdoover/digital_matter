@@ -25,6 +25,13 @@ def test_button_only_on_managed_hawks():
     assert "fast_updates" not in make_ui(make_config(manage_device_config=True))._elements
 
 
+def test_button_name_matches_its_handler():
+    # The handler is looked up by the published element name, not the attribute.
+    ui = make_ui(make_config(**MANAGED_HAWK))
+    assert "fast_updates" in ui.to_schema(resolve_config=False)["children"]
+    assert DigitalMatterProcessor.on_fast_updates._rpc_method == "fast_updates"
+
+
 def test_fast_updates_override_the_read_schedule():
     app = make_app(**MANAGED_HAWK, read_period_minutes=240, upload_every_n_reads=4)
     task = app._desired_sections(HAWK_PRODUCT_ID)[TASK_1]
