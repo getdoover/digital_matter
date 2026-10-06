@@ -62,7 +62,7 @@ class DigitalMatterProcessor(Application):
         if self.config.manage_device_config.value:
             await self._push_device_config()
 
-    @ui.handler("power_on")
+    @ui.handler("power_on", auto_update=False)
     async def on_power_on(self, ctx, _value):
         # Buttons report the press by setting a value, so clear it to re-arm.
         await ctx.set_value(None)
@@ -74,7 +74,9 @@ class DigitalMatterProcessor(Application):
         log.info("Power on requested, starting at the next uplink.")
         await self.tags.power_on_pending.set(True)
         await self.tags.power_on_until.set(None)
-        await self._push_device_config()
+        if not await self._push_device_config():
+            # Nothing reached the device, so there's nothing to time.
+            await self.tags.power_on_pending.set(False)
 
     def _power_on_until(self) -> datetime | None:
         until = self.tags.power_on_until.value
