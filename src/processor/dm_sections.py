@@ -72,6 +72,9 @@ class HawkSettings:
     modbus_baud_rate: int = 9600
     modbus_parity: int = 1  # 0=None, 1=Even, 2=Odd
     modbus_sensors: list[ModbusSensor] = field(default_factory=list)
+    # Keep the boost output on between reads, e.g. so a sensor can be
+    # configured over Bluetooth.
+    sensors_always_on: bool = False
 
 
 @dataclass
@@ -159,6 +162,7 @@ def build_hawk_plan(settings: HawkSettings) -> HawkPlan:
     if settings.card == CARD_RS1:
         sections[RS1_CARD] = {
             "fVboost12V": _flag(settings.sensor_power == POWER_12V),
+            "fVboostAlwaysOn": _flag(settings.sensors_always_on),
             "fCurrentLoopVboost": _flag(powered and bool(inputs)),
             "fModbusVboost": _flag(powered and bool(settings.modbus_sensors)),
             "iModbusBaudrate": str(settings.modbus_baud_rate),
@@ -167,6 +171,7 @@ def build_hawk_plan(settings: HawkSettings) -> HawkPlan:
     else:
         sections[CURRENT_LOOP_CARD] = {
             "fVboost12V": _flag(settings.sensor_power == POWER_12V),
+            "fVboostAlwaysOn": _flag(settings.sensors_always_on),
             **{f"f420mA{i}_Vboost": _flag(powered and i in inputs) for i in range(1, 5)},
         }
 

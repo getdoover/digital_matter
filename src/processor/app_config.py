@@ -143,7 +143,7 @@ class DigitalMatterProcessorConfig(config.Schema):
         minimum=2,
         description="How often the sensors are read. With Upload Every N Reads this sets the update interval. "
         "Updating more often than hourly significantly shortens battery life; "
-        "use the Fast Updates button for short bursts instead.",
+        "use the Power On button for short bursts instead.",
         show_if=_managed_general,
     )
     upload_every = config.Integer(

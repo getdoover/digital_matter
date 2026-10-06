@@ -76,12 +76,19 @@ def test_current_loop_card_powers_only_the_inputs_read():
     assert plan.analogues == {5: "4-20mA input 2", 6: "4-20mA input 4"}
     assert plan.sections[CURRENT_LOOP_CARD] == {
         "fVboost12V": "0",
+        "fVboostAlwaysOn": "0",
         "f420mA1_Vboost": "0",
         "f420mA2_Vboost": "1",
         "f420mA3_Vboost": "0",
         "f420mA4_Vboost": "1",
     }
     assert RS1_CARD not in plan.sections
+
+
+def test_sensors_always_on_keeps_vboost_on_for_either_card():
+    assert build_hawk_plan(hawk(current_loop_inputs=[1], sensors_always_on=True)).sections[RS1_CARD]["fVboostAlwaysOn"] == "1"
+    plan = build_hawk_plan(hawk(card="4-20mA", current_loop_inputs=[1], sensors_always_on=True))
+    assert plan.sections[CURRENT_LOOP_CARD]["fVboostAlwaysOn"] == "1"
 
 
 def test_externally_powered_sensors_leave_vboost_off():

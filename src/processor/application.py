@@ -37,10 +37,11 @@ log = logging.getLogger(__name__)
 
 HARDWARE_CHANNEL = "dv-hardware"
 
-# A Fast Updates burst: the shortest interval a Hawk manages (an upload takes
-# about 2 minutes), for long enough to commission or check a sensor.
-FAST_UPDATE_MINS = 2
-FAST_UPDATE_DURATION = timedelta(minutes=30)
+# Power On: keep a Hawk's sensors powered and read them at the shortest
+# interval it manages (an upload takes about 2 minutes), for long enough to
+# commission a sensor, e.g. configure it over Bluetooth.
+POWER_ON_READ_MINS = 2
+POWER_ON_DURATION = timedelta(minutes=30)
 
 
 class DigitalMatterProcessor(Application):
@@ -61,8 +62,8 @@ class DigitalMatterProcessor(Application):
         if self.config.manage_device_config.value:
             await self._push_device_config()
 
-    @ui.handler("fast_updates")
-    async def on_fast_updates(self, ctx, _value):
+    @ui.handler("power_on")
+    async def on_power_on(self, ctx, _value):
         # Buttons report the press by setting a value, so clear it to re-arm.
         await ctx.set_value(None)
         if self.config.is_vehicle_tracker or not self.config.manage_device_config.value:
@@ -70,43 +71,43 @@ class DigitalMatterProcessor(Application):
 
         # The device only picks the faster schedule up at its next uplink, so
         # the burst's timer starts then rather than now.
-        log.info("Fast updates requested, starting at the next uplink.")
-        await self.tags.fast_updates_pending.set(True)
-        await self.tags.fast_updates_until.set(None)
+        log.info("Power on requested, starting at the next uplink.")
+        await self.tags.power_on_pending.set(True)
+        await self.tags.power_on_until.set(None)
         await self._push_device_config()
 
-    def _fast_updates_until(self) -> datetime | None:
-        until = self.tags.fast_updates_until.value
+    def _power_on_until(self) -> datetime | None:
+        until = self.tags.power_on_until.value
         return datetime.fromtimestamp(until / 1000, timezone.utc) if until else None
 
-    def _fast_updates_active(self) -> bool:
-        return bool(self.tags.fast_updates_pending.value) or self._fast_updates_until() is not None
+    def _power_on_active(self) -> bool:
+        return bool(self.tags.power_on_pending.value) or self._power_on_until() is not None
 
-    async def _update_fast_updates(self):
-        """Run a Fast Updates burst's timer, called on each uplink.
+    async def _update_power_on(self):
+        """Run Power On's timer, called on each uplink.
 
         The uplink after the button press is when the device picks up the
-        faster schedule, so the 30 minutes start then. Once they're up, the
-        normal interval is pushed back, which the device picks up on its next
-        check-in (every couple of minutes during a burst).
+        powered, faster schedule, so the 30 minutes start then. Once they're
+        up, the normal config is pushed back, which the device picks up on its
+        next check-in (every couple of minutes while powered on).
         """
         now = datetime.now(timezone.utc)
-        if self.tags.fast_updates_pending.value:
-            until = now + FAST_UPDATE_DURATION
-            log.info(f"Fast updates applied, running until {until}")
-            await self.tags.fast_updates_pending.set(False)
-            await self.tags.fast_updates_until.set(int(until.timestamp() * 1000))
+        if self.tags.power_on_pending.value:
+            until = now + POWER_ON_DURATION
+            log.info(f"Power on applied, running until {until}")
+            await self.tags.power_on_pending.set(False)
+            await self.tags.power_on_until.set(int(until.timestamp() * 1000))
             return
 
-        until = self._fast_updates_until()
+        until = self._power_on_until()
         if until is None or now < until:
             return
 
-        log.info("Fast updates finished, restoring the normal interval.")
-        await self.tags.fast_updates_until.set(None)
+        log.info("Power on finished, restoring the normal interval.")
+        await self.tags.power_on_until.set(None)
         if not await self._push_device_config():
             # Try again on the next uplink.
-            await self.tags.fast_updates_until.set(int(until.timestamp() * 1000))
+            await self.tags.power_on_until.set(int(until.timestamp() * 1000))
 
     async def _push_device_config(self) -> bool:
         """Push the configured settings to Device Manager, where they differ.
@@ -166,11 +167,12 @@ class DigitalMatterProcessor(Application):
             log.info(f"No device settings to manage for product {product_id}.")
             return {}
 
-        fast = self._fast_updates_active()
+        powered_on = self._power_on_active()
         plan = build_hawk_plan(HawkSettings(
             card=c.hawk_card.value,
-            read_period_mins=FAST_UPDATE_MINS if fast else c.read_period_mins.value,
-            upload_every=1 if fast else c.upload_every.value,
+            read_period_mins=POWER_ON_READ_MINS if powered_on else c.read_period_mins.value,
+            upload_every=1 if powered_on else c.upload_every.value,
+            sensors_always_on=powered_on,
             sensor_power=c.sensor_power.value,
             warm_up_s=c.warm_up_s.value,
             current_loop_inputs=[e.value for e in c.current_loop_inputs.elements],
@@ -251,7 +253,7 @@ class DigitalMatterProcessor(Application):
             offline_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
 
-        await self._update_fast_updates()
+        await self._update_power_on()
 
     async def _update_vehicle_tags(self, data: dict):
         odometer_offset = self.config.odometer_offset_km.value

@@ -52,11 +52,11 @@ class DigitalMatterTags(Tags):
     # Outcome of the last Device Manager config push, e.g. "Up to date".
     dm_config_status = Tag("string", default=None)
 
-    # Fast Updates was pressed and is waiting for the device to pick up the
+    # Power On was pressed and is waiting for the device to pick up the
     # faster schedule at its next uplink, when the burst's timer starts.
-    fast_updates_pending = Tag("boolean", default=False)
-    # When a Fast Updates burst ends (ms since epoch); None when not in one.
-    fast_updates_until = Tag("number", default=None)
+    power_on_pending = Tag("boolean", default=False)
+    # When a Power On burst ends (ms since epoch); None when not in one.
+    power_on_until = Tag("number", default=None)
 
     # Sensor inputs seen so far, {"analogue": [5, ...], "digital": [3, ...]}.
     # Drives the per-input tags and UI elements on general devices.

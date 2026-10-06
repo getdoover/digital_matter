@@ -1,11 +1,11 @@
-"""Fast Updates: temporarily read a Hawk every couple of minutes."""
+"""Power On: temporarily keep a Hawk's sensors powered and read every couple of minutes."""
 
 import asyncio
 from datetime import datetime, timedelta, timezone
 
 from processor.app_tags import DigitalMatterTags
-from processor.application import FAST_UPDATE_MINS, DigitalMatterProcessor
-from processor.dm_sections import HAWK_PRODUCT_ID, TASK_1
+from processor.application import POWER_ON_READ_MINS, DigitalMatterProcessor
+from processor.dm_sections import HAWK_PRODUCT_ID, RS1_CARD, TASK_1
 from .test_device_type import make_config, make_ui
 
 MANAGED_HAWK = {"device_type": "General", "manage_device_config": True, "current_loop_inputs": [1]}
@@ -20,36 +20,37 @@ def make_app(**config):
 
 
 def test_button_only_on_managed_hawks():
-    assert "fast_updates" in make_ui(make_config(**MANAGED_HAWK))._elements
-    assert "fast_updates" not in make_ui(make_config(device_type="General"))._elements
-    assert "fast_updates" not in make_ui(make_config(manage_device_config=True))._elements
+    assert "power_on" in make_ui(make_config(**MANAGED_HAWK))._elements
+    assert "power_on" not in make_ui(make_config(device_type="General"))._elements
+    assert "power_on" not in make_ui(make_config(manage_device_config=True))._elements
 
 
 def test_button_name_matches_its_handler():
     # The handler is looked up by the published element name, not the attribute.
     ui = make_ui(make_config(**MANAGED_HAWK))
-    assert "fast_updates" in ui.to_schema(resolve_config=False)["children"]
-    assert DigitalMatterProcessor.on_fast_updates._rpc_method == "fast_updates"
+    assert "power_on" in ui.to_schema(resolve_config=False)["children"]
+    assert DigitalMatterProcessor.on_power_on._rpc_method == "power_on"
 
 
-def test_fast_updates_sit_below_digital_inputs():
+def test_power_on_sits_below_digital_inputs():
     ui = make_ui(make_config(**MANAGED_HAWK))
     detected = {"analogue": [5], "digital": [1, 3, 9]}
     ui.tags.add_input_tags(detected)
     ui.add_input_elements(detected)
     children = ui.to_schema(resolve_config=False)["children"]
     last_digital = max(c["position"] for n, c in children.items() if n.startswith("digital_input_"))
-    assert last_digital < children["fast_updates"]["position"] < children["fast_updates_until"]["position"]
+    assert last_digital < children["power_on"]["position"] < children["power_on_until"]["position"]
 
 
-def test_fast_updates_override_the_read_schedule():
+def test_power_on_powers_sensors_and_speeds_up_reads():
     app = make_app(**MANAGED_HAWK, read_period_minutes=240, upload_every_n_reads=4)
     task = app._desired_sections(HAWK_PRODUCT_ID)[TASK_1]
     assert (task["iEventPeriod"], task["bUploadMultiplier"]) == ("240", "4")
 
-    app._fast_updates_active = lambda: True
+    app._power_on_active = lambda: True
     task = app._desired_sections(HAWK_PRODUCT_ID)[TASK_1]
-    assert (task["iEventPeriod"], task["bUploadMultiplier"]) == (str(FAST_UPDATE_MINS), "1")
+    assert (task["iEventPeriod"], task["bUploadMultiplier"]) == (str(POWER_ON_READ_MINS), "1")
+    assert app._desired_sections(HAWK_PRODUCT_ID)[RS1_CARD]["fVboostAlwaysOn"] == "1"
 
 
 class FakeTag:
@@ -62,28 +63,28 @@ class FakeTag:
 
 def test_burst_timer_starts_at_the_next_uplink():
     app = make_app(**MANAGED_HAWK)
-    app.tags = type("Tags", (), {"fast_updates_pending": FakeTag(True), "fast_updates_until": FakeTag()})()
+    app.tags = type("Tags", (), {"power_on_pending": FakeTag(True), "power_on_until": FakeTag()})()
     pushes = []
 
     async def push():
-        pushes.append(app._fast_updates_active())
+        pushes.append(app._power_on_active())
         return True
 
     app._push_device_config = push
 
     # The uplink after the press starts the 30 minutes.
-    asyncio.run(app._update_fast_updates())
-    assert app.tags.fast_updates_pending.value is False
-    until = app._fast_updates_until()
+    asyncio.run(app._update_power_on())
+    assert app.tags.power_on_pending.value is False
+    until = app._power_on_until()
     assert timedelta(minutes=29) < until - datetime.now(timezone.utc) <= timedelta(minutes=30)
     assert pushes == []
 
     # Mid-burst uplinks change nothing.
-    asyncio.run(app._update_fast_updates())
-    assert app._fast_updates_until() == until and pushes == []
+    asyncio.run(app._update_power_on())
+    assert app._power_on_until() == until and pushes == []
 
     # Once it's over, the normal schedule is pushed.
-    app.tags.fast_updates_until.value = int((datetime.now(timezone.utc) - timedelta(seconds=1)).timestamp() * 1000)
-    asyncio.run(app._update_fast_updates())
-    assert app.tags.fast_updates_until.value is None
+    app.tags.power_on_until.value = int((datetime.now(timezone.utc) - timedelta(seconds=1)).timestamp() * 1000)
+    asyncio.run(app._update_power_on())
+    assert app.tags.power_on_until.value is None
     assert pushes == [False]

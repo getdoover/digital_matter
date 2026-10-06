@@ -7,11 +7,11 @@ from .app_tags import DigitalMatterTags, analogue_tag_name, digital_tag_name
 # Elements that only make sense on a vehicle tracker.
 VEHICLE_ELEMENTS = ("speed", "gps_accuracy", "ignition_on", "run_hours", "odometer", "analog_input")
 
-# Elements for temporarily speeding up a Hawk's updates.
-FAST_UPDATE_ELEMENTS = ("fast_updates", "fast_updates_until")
+# Elements for temporarily powering a Hawk's sensors and speeding up its updates.
+POWER_ON_ELEMENTS = ("power_on", "power_on_until")
 
-# Digital inputs sit at 60 + their number, so this keeps fast updates below them.
-FAST_UPDATES_POSITION = 100
+# Digital inputs sit at 60 + their number, so this keeps Power On below them.
+POWER_ON_POSITION = 100
 
 
 class DigitalMatterUI(ui.UI, hidden="$config.app().hide_ui"):
@@ -133,23 +133,23 @@ class DigitalMatterUI(ui.UI, hidden="$config.app().hide_ui"):
         value=DigitalMatterTags.uplink_reason,
     )
 
-    fast_updates = ui.Button(
-        "Fast Updates for 30 min", name="fast_updates", position=FAST_UPDATES_POSITION
+    power_on = ui.Button(
+        "Power On for 30 min", name="power_on", position=POWER_ON_POSITION
     )
 
-    fast_updates_until = ui.Timestamp(
-        "Fast Updates Until",
-        value=DigitalMatterTags.fast_updates_until,
-        position=FAST_UPDATES_POSITION + 1,
+    power_on_until = ui.Timestamp(
+        "Power On Until",
+        value=DigitalMatterTags.power_on_until,
+        position=POWER_ON_POSITION + 1,
     )
 
     async def setup(self):
         if self.config is None:
             return
 
-        # Fast updates change the Hawk's read schedule, so need its config managed from here.
+        # Power On changes the Hawk's config, so needs it managed from here.
         if self.config.is_vehicle_tracker or not self.config.manage_device_config.value:
-            for name in FAST_UPDATE_ELEMENTS:
+            for name in POWER_ON_ELEMENTS:
                 self.remove_element(name)
 
         if self.config.is_vehicle_tracker:
