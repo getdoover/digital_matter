@@ -32,6 +32,16 @@ def test_button_name_matches_its_handler():
     assert DigitalMatterProcessor.on_fast_updates._rpc_method == "fast_updates"
 
 
+def test_fast_updates_sit_below_digital_inputs():
+    ui = make_ui(make_config(**MANAGED_HAWK))
+    detected = {"analogue": [5], "digital": [1, 3, 9]}
+    ui.tags.add_input_tags(detected)
+    ui.add_input_elements(detected)
+    children = ui.to_schema(resolve_config=False)["children"]
+    last_digital = max(c["position"] for n, c in children.items() if n.startswith("digital_input_"))
+    assert last_digital < children["fast_updates"]["position"] < children["fast_updates_until"]["position"]
+
+
 def test_fast_updates_override_the_read_schedule():
     app = make_app(**MANAGED_HAWK, read_period_minutes=240, upload_every_n_reads=4)
     task = app._desired_sections(HAWK_PRODUCT_ID)[TASK_1]

@@ -10,6 +10,9 @@ VEHICLE_ELEMENTS = ("speed", "gps_accuracy", "ignition_on", "run_hours", "odomet
 # Elements for temporarily speeding up a Hawk's updates.
 FAST_UPDATE_ELEMENTS = ("fast_updates", "fast_updates_until")
 
+# Digital inputs sit at 60 + their number, so this keeps fast updates below them.
+FAST_UPDATES_POSITION = 100
+
 
 class DigitalMatterUI(ui.UI, hidden="$config.app().hide_ui"):
     # Speed gauge
@@ -130,11 +133,14 @@ class DigitalMatterUI(ui.UI, hidden="$config.app().hide_ui"):
         value=DigitalMatterTags.uplink_reason,
     )
 
-    fast_updates = ui.Button("Fast Updates for 30 min", name="fast_updates")
+    fast_updates = ui.Button(
+        "Fast Updates for 30 min", name="fast_updates", position=FAST_UPDATES_POSITION
+    )
 
     fast_updates_until = ui.Timestamp(
         "Fast Updates Until",
         value=DigitalMatterTags.fast_updates_until,
+        position=FAST_UPDATES_POSITION + 1,
     )
 
     async def setup(self):
