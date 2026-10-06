@@ -7,6 +7,9 @@ from .app_tags import DigitalMatterTags, analogue_tag_name, digital_tag_name
 # Elements that only make sense on a vehicle tracker.
 VEHICLE_ELEMENTS = ("speed", "gps_accuracy", "ignition_on", "run_hours", "odometer", "analog_input")
 
+# Elements for temporarily speeding up a Hawk's updates.
+FAST_UPDATE_ELEMENTS = ("fast_updates", "fast_updates_until")
+
 
 class DigitalMatterUI(ui.UI, hidden="$config.app().hide_ui"):
     # Speed gauge
@@ -127,8 +130,23 @@ class DigitalMatterUI(ui.UI, hidden="$config.app().hide_ui"):
         value=DigitalMatterTags.uplink_reason,
     )
 
+    fast_updates = ui.Button("Fast Updates for 30 min")
+
+    fast_updates_until = ui.Timestamp(
+        "Fast Updates Until",
+        value=DigitalMatterTags.fast_updates_until,
+    )
+
     async def setup(self):
-        if self.config is None or self.config.is_vehicle_tracker:
+        if self.config is None:
+            return
+
+        # Fast updates change the Hawk's read schedule, so need its config managed from here.
+        if self.config.is_vehicle_tracker or not self.config.manage_device_config.value:
+            for name in FAST_UPDATE_ELEMENTS:
+                self.remove_element(name)
+
+        if self.config.is_vehicle_tracker:
             return
 
         for name in VEHICLE_ELEMENTS:

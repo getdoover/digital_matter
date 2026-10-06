@@ -49,6 +49,12 @@ class DigitalMatterTags(Tags):
 
     sim_iccid = Tag("string", default=None)
 
+    # Outcome of the last Device Manager config push, e.g. "Up to date".
+    dm_config_status = Tag("string", default=None)
+
+    # When a Fast Updates burst ends (ms since epoch); None when not in one.
+    fast_updates_until = Tag("number", default=None)
+
     # Sensor inputs seen so far, {"analogue": [5, ...], "digital": [3, ...]}.
     # Drives the per-input tags and UI elements on general devices.
     detected_inputs = Tag("object", default=None)

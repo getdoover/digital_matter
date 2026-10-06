@@ -1,11 +1,29 @@
 import logging
 from datetime import datetime, timezone, timedelta
 
+import aiohttp
+from pydoover import ui
 from pydoover.processor import Application
-from pydoover.models import MessageCreateEvent, ConnectionStatus
+from pydoover.models import DeploymentEvent, MessageCreateEvent, ConnectionStatus
 from pydoover.tags import LogMode
 
 from .app_config import DigitalMatterProcessorConfig
+from .dm_api import DeviceManagerClient, DeviceManagerError
+from .dm_sections import (
+    HAWK_PRODUCT_ID,
+    MODBUS_BYTE_ORDER,
+    MODBUS_DATATYPE,
+    MODBUS_FUNCTION,
+    MODBUS_PARITY,
+    HawkSettings,
+    ModbusRegister,
+    ModbusSensor,
+    TrackerSettings,
+    build_hawk_plan,
+    build_tracker_sections,
+    sections_to_push,
+    supported_sections,
+)
 from .app_tags import (
     DigitalMatterTags,
     analogue_tag_name,
@@ -18,6 +36,11 @@ from .app_ui import DigitalMatterUI
 log = logging.getLogger(__name__)
 
 HARDWARE_CHANNEL = "dv-hardware"
+
+# A Fast Updates burst: the shortest interval a Hawk manages (an upload takes
+# about 2 minutes), for long enough to commission or check a sensor.
+FAST_UPDATE_MINS = 2
+FAST_UPDATE_DURATION = timedelta(minutes=30)
 
 
 class DigitalMatterProcessor(Application):
@@ -33,6 +56,130 @@ class DigitalMatterProcessor(Application):
         # Log every value each uplink reports, even when unchanged, so a steady
         # reading (e.g. a dam level that hasn't moved) still shows in history.
         self.tag_manager.log_mode = LogMode.ONLY_SET
+
+    async def on_deployment(self, event: DeploymentEvent):
+        if self.config.manage_device_config.value:
+            await self._push_device_config()
+
+    @ui.handler("fast_updates")
+    async def on_fast_updates(self, ctx, _value):
+        # Buttons report the press by setting a value, so clear it to re-arm.
+        await ctx.set_value(None)
+        if self.config.is_vehicle_tracker or not self.config.manage_device_config.value:
+            return
+
+        until = datetime.now(timezone.utc) + FAST_UPDATE_DURATION
+        log.info(f"Fast updates until {until}")
+        await self.tags.fast_updates_until.set(int(until.timestamp() * 1000))
+        await self._push_device_config()
+
+    def _fast_updates_until(self) -> datetime | None:
+        until = self.tags.fast_updates_until.value
+        return datetime.fromtimestamp(until / 1000, timezone.utc) if until else None
+
+    async def _end_fast_updates_if_due(self):
+        """Put the normal interval back once a Fast Updates burst is over.
+
+        Runs on each uplink: the device is checking in every couple of minutes
+        during a burst, and picks the change up on the following check-in.
+        """
+        until = self._fast_updates_until()
+        if until is None or datetime.now(timezone.utc) < until:
+            return
+
+        log.info("Fast updates finished, restoring the normal interval.")
+        await self.tags.fast_updates_until.set(None)
+        if not await self._push_device_config():
+            # Try again on the next uplink.
+            await self.tags.fast_updates_until.set(int(until.timestamp() * 1000))
+
+    async def _push_device_config(self) -> bool:
+        """Push the configured settings to Device Manager, where they differ.
+
+        DM is the store of record: sections are compared with what DM holds and
+        only changes are sent. Hawks can't be read back, so they always get the
+        full set. Returns whether the push succeeded.
+        """
+        api_key = self.config.dm_api_key.value
+        if not api_key:
+            log.warning("Manage Device Config is on but no Device Manager API key is set.")
+            await self.tags.dm_config_status.set("Not pushed: no Device Manager API key set")
+            return False
+
+        serial = self.config.serial_number.value
+        try:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:
+                client = DeviceManagerClient(session, api_key)
+                product_id = await client.lookup_product(serial)
+                desired = self._desired_sections(product_id)
+
+                defaults = await client.get_defaults(product_id)
+                desired, skipped = supported_sections(desired, defaults)
+                if skipped:
+                    log.info(f"Product {product_id} doesn't support sections {skipped}, skipping them.")
+
+                current = await client.get_parameters(product_id, serial)
+                changed = sections_to_push(desired, current, defaults)
+                if changed:
+                    await client.set_parameters(product_id, serial, changed)
+        except (DeviceManagerError, aiohttp.ClientError, ValueError) as e:
+            log.error(f"Failed to push device config: {e}")
+            await self.tags.dm_config_status.set(f"Failed: {e}")
+            return False
+
+        if changed:
+            status = f"Queued {len(changed)} section(s), applied at the next check-in"
+        else:
+            status = "Up to date"
+        log.info(f"Device config for {serial} (product {product_id}): {status}. Sections: {changed}")
+        await self.tags.dm_config_status.set(status)
+        return True
+
+    def _desired_sections(self, product_id: int) -> dict[int, dict[str, str]]:
+        c = self.config
+        if c.is_vehicle_tracker:
+            return build_tracker_sections(TrackerSettings(
+                heartbeat_mins=c.heartbeat_mins.value,
+                log_odometer=c.log_odometer.value,
+                run_detect=c.run_detect.value,
+                run_detect_on_v=c.run_detect_on_v.value,
+                run_detect_off_v=c.run_detect_off_v.value,
+                analogue_input=c.analogue_input.value,
+            ))
+
+        if product_id != HAWK_PRODUCT_ID:
+            log.info(f"No device settings to manage for product {product_id}.")
+            return {}
+
+        fast = self._fast_updates_until() is not None
+        plan = build_hawk_plan(HawkSettings(
+            card=c.hawk_card.value,
+            read_period_mins=FAST_UPDATE_MINS if fast else c.read_period_mins.value,
+            upload_every=1 if fast else c.upload_every.value,
+            sensor_power=c.sensor_power.value,
+            warm_up_s=c.warm_up_s.value,
+            current_loop_inputs=[e.value for e in c.current_loop_inputs.elements],
+            modbus_baud_rate=int(c.modbus_baud_rate.value),
+            modbus_parity=MODBUS_PARITY[c.modbus_parity.value],
+            modbus_sensors=[
+                ModbusSensor(
+                    address=s.address.value,
+                    registers=[
+                        ModbusRegister(
+                            function=MODBUS_FUNCTION[r.register_type.value],
+                            address=r.address.value,
+                            datatype=MODBUS_DATATYPE[r.data_type.value],
+                            byte_order=MODBUS_BYTE_ORDER[r.byte_order.value],
+                            scale_exponent=r.scale_exponent.value,
+                        )
+                        for r in s.registers.elements
+                    ],
+                )
+                for s in c.modbus_sensors.elements
+            ],
+        ))
+        log.info(f"Hawk analogues: {plan.analogues}")
+        return plan.sections
 
     async def on_message_create(self, event: MessageCreateEvent):
         """
@@ -88,6 +235,8 @@ class DigitalMatterProcessor(Application):
             connection_status=ConnectionStatus.periodic_unknown,
             offline_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
+
+        await self._end_fast_updates_if_due()
 
     async def _update_vehicle_tags(self, data: dict):
         odometer_offset = self.config.odometer_offset_km.value
