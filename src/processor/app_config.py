@@ -5,6 +5,10 @@ from pydoover import config
 from pydoover.processor import ManySubscriptionConfig, SerialNumberConfig
 
 
+#: How long after a report a device is called offline unless told otherwise.
+DEFAULT_OFFLINE_AFTER_MINS = 60
+
+
 class DeviceType(Enum):
     vehicle_tracker = "Vehicle Tracker"
     general = "General"
@@ -74,6 +78,16 @@ class DigitalMatterProcessorConfig(config.Schema):
         description="Offset to add to the device run hours reading",
         default=0.0,
         show_if=config.equal(device_type, DeviceType.vehicle_tracker),
+    )
+
+    offline_after_mins = config.Integer(
+        "Offline After (minutes)",
+        default=DEFAULT_OFFLINE_AFTER_MINS,
+        minimum=5,
+        advanced=True,
+        description="The device shows offline once it has gone this long without reporting in. "
+        "Set it above the device's heartbeat: an asset tracker that checks in twice a day "
+        "wants more than 720, and 1500 rides out one missed report.",
     )
 
     # Device Manager config, pushed to the device on deployment. Settings are

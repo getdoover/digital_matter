@@ -7,7 +7,7 @@ from pydoover.processor import Application
 from pydoover.models import DeploymentEvent, MessageCreateEvent, ConnectionStatus
 from pydoover.tags import LogMode
 
-from .app_config import DigitalMatterProcessorConfig
+from .app_config import DEFAULT_OFFLINE_AFTER_MINS, DigitalMatterProcessorConfig
 from .dm_api import DeviceManagerClient, DeviceManagerError
 from .dm_sections import (
     HAWK_PRODUCT_ID,
@@ -263,16 +263,27 @@ class DigitalMatterProcessor(Application):
             await self.api.update_channel_aggregate("location", position, replace_data=True)
             await self.api.create_message("location", position)
 
-        # Update connection status
-        # Digital Matter devices typically report periodically (e.g., every 10-30 minutes)
-        # Set offline threshold to 1 hour from now
+        # Update connection status. Online as of this report, and offline
+        # once Offline After has passed without another.
+        now = datetime.now(timezone.utc)
         await self.ping_connection(
-            online_at=datetime.now(timezone.utc),
+            online_at=now,
             connection_status=ConnectionStatus.periodic_unknown,
-            offline_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            offline_at=self._offline_at(now),
         )
 
         await self._update_power_on()
+
+    def _offline_at(self, reported_at: datetime) -> datetime:
+        """When a device that reported in at ``reported_at`` is next called offline.
+
+        Vehicle trackers report every few minutes to half an hour and the
+        default of an hour suits them. An asset tracker on a twelve-hour
+        heartbeat would spend eleven hours of every twelve offline at that,
+        so the wait is the install's Offline After setting.
+        """
+        minutes = self.config.offline_after_mins.value or DEFAULT_OFFLINE_AFTER_MINS
+        return reported_at + timedelta(minutes=minutes)
 
     async def _update_vehicle_tags(self, data: dict):
         odometer_offset = self.config.odometer_offset_km.value
