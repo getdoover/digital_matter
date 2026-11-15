@@ -266,10 +266,12 @@ class DigitalMatterProcessor(Application):
         # Update connection status. Online as of this report, and offline
         # once Offline After has passed without another.
         now = datetime.now(timezone.utc)
+        offline_at = self._offline_at(now)
+        await self._ensure_connection_config(int((offline_at - now).total_seconds()))
         await self.ping_connection(
             online_at=now,
             connection_status=ConnectionStatus.periodic_unknown,
-            offline_at=self._offline_at(now),
+            offline_at=offline_at,
         )
 
         await self._update_power_on()
@@ -284,6 +286,49 @@ class DigitalMatterProcessor(Application):
         """
         minutes = self.config.offline_after_mins.value or DEFAULT_OFFLINE_AFTER_MINS
         return reported_at + timedelta(minutes=minutes)
+
+    async def _ensure_connection_config(self, offline_after_secs: int) -> None:
+        """Keep the device's connection config saying what this app knows: how
+        long to wait before calling it offline, and how often it reports in.
+
+        The platform decides offline by its own clock, read from this config,
+        and with no config it waits an hour whatever Offline After says. The
+        ping keeps the wait in step with ours, but only in a config it was
+        handed with this invocation, and it never creates one or sets the
+        interval. So the wait is ours to write when no config came with the
+        invocation, and the interval is ours either way.
+
+        Only the keys that differ are written, never a whole config: whatever
+        else is in it is not ours to change. A failure here is logged and
+        left: the ping matters more.
+        """
+        if self.agent_id is None:
+            return
+        wanted = {}
+        if not self._connection_config:
+            wanted["offline_after"] = offline_after_secs
+        interval = self.config.reporting_interval_secs
+        if interval is not None:
+            wanted["expected_interval"] = interval
+        if not wanted:
+            return
+        try:
+            stored = self._connection_config
+            if not stored:
+                try:
+                    aggregate = await self.api.fetch_channel_aggregate("doover_connection")
+                    stored = (aggregate.data or {}).get("config") or {}
+                except Exception:
+                    # No connection aggregate yet: nothing stored to compare with.
+                    stored = {}
+            changes = {key: value for key, value in wanted.items() if stored.get(key) != value}
+            if not changes:
+                return
+            await self.api.update_channel_aggregate(
+                "doover_connection", {"config": changes}, log_update=True
+            )
+        except Exception as e:
+            log.warning("Failed to update the connection config: %s", e)
 
     async def _update_vehicle_tags(self, data: dict):
         odometer_offset = self.config.odometer_offset_km.value

@@ -90,6 +90,18 @@ class DigitalMatterProcessorConfig(config.Schema):
         "wants more than 720, and 1500 rides out one missed report.",
     )
 
+    reporting_interval_mins = config.Integer(
+        "Reporting Interval (minutes)",
+        default=None,
+        minimum=1,
+        advanced=True,
+        description="How often the device normally reports in, if you know it. It is shown with the "
+        "device's connection as its check-in interval, and the device reads as overdue once one is "
+        "missed. Leave blank if unsure: Offline After alone decides when the device shows offline. "
+        "Not needed with Manage Device Config on, where the device's own settings say.",
+        show_if=config.not_equal("manage_device_config", True),
+    )
+
     # Device Manager config, pushed to the device on deployment. Settings are
     # flat rather than grouped in objects so installs that predate them still
     # load with defaults, and only shown while Manage Device Config is on.
@@ -233,6 +245,23 @@ class DigitalMatterProcessorConfig(config.Schema):
     @property
     def is_vehicle_tracker(self) -> bool:
         return self.device_type.value is DeviceType.vehicle_tracker
+
+    @property
+    def reporting_interval_secs(self) -> int | None:
+        """How often the device is expected to report in, where that is known.
+
+        A managed device's own settings say: a tracker's heartbeat, or a
+        Hawk's read period times the reads it batches into an upload.
+        Otherwise it is the Reporting Interval setting, and unknown when
+        that is left blank.
+        """
+        if not self.manage_device_config.value:
+            minutes = self.reporting_interval_mins.value
+        elif self.is_vehicle_tracker:
+            minutes = self.heartbeat_mins.value
+        else:
+            minutes = self.read_period_mins.value * self.upload_every.value
+        return int(minutes * 60) if minutes else None
 
 
 def export():
